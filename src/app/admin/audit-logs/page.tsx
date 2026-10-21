@@ -9,6 +9,7 @@ import {
   Filter,
   CheckCircle2,
   AlertTriangle,
+  History,
 } from "lucide-react";
 
 export default function AdminAuditLogsPage() {
@@ -37,13 +38,13 @@ export default function AdminAuditLogsPage() {
   };
 
   const getActionBadgeColor = (action: string) => {
-    if (action.includes("PAYMENT")) return "bg-emerald-500/10 text-emerald-300 border-emerald-500/20";
-    if (action.includes("ISSUED")) return "bg-yellow-500/10 text-yellow-300 border-yellow-500/20";
+    if (action.includes("PAYMENT")) return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    if (action.includes("ISSUED")) return "bg-amber-50 text-amber-700 border-amber-200";
     if (action.includes("REVOKED") || action.includes("REJECTED") || action.includes("DROPPED"))
-      return "bg-rose-500/10 text-rose-300 border-rose-500/20";
-    if (action.includes("PASSWORD")) return "bg-amber-500/10 text-amber-300 border-amber-500/20";
-    if (action.includes("UPDATED")) return "bg-blue-500/10 text-blue-300 border-blue-500/20";
-    return "bg-teal-500/10 text-teal-300 border-teal-500/20";
+      return "bg-rose-50 text-rose-700 border-rose-200";
+    if (action.includes("PASSWORD")) return "bg-indigo-50 text-indigo-700 border-indigo-200";
+    if (action.includes("UPDATED")) return "bg-blue-50 text-blue-700 border-blue-200";
+    return "bg-slate-100 text-slate-700 border-slate-200";
   };
 
   return (
@@ -51,21 +52,25 @@ export default function AdminAuditLogsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
-            <ShieldAlert className="w-6 h-6 text-teal-400" />
-            System Audit Trail
-          </h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              System Audit Trail
+            </h1>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/80">
+              {logs.length} Logged Entries
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Immutable log of all financial transactions, certificate actions, and administrative approvals.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-slate-400">Filter Action:</label>
+        <div className="flex items-center gap-2 self-start sm:self-auto bg-white p-2 rounded-2xl border border-slate-200/80 shadow-xs">
+          <label className="text-xs text-slate-500 font-semibold pl-2">Filter Action:</label>
           <select
             value={actionFilter}
             onChange={(e) => setActionFilter(e.target.value)}
-            className="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All Actions</option>
             <option value="PAYMENT_RECORDED">PAYMENT_RECORDED</option>
@@ -84,10 +89,10 @@ export default function AdminAuditLogsPage() {
       </div>
 
       {/* Audit Log Table */}
-      <div className="rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden">
+      <div className="rounded-2xl bg-white border border-slate-200/80 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-slate-950/80 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800 font-semibold">
+          <table className="w-full text-left text-xs text-slate-600">
+            <thead className="bg-slate-50/80 text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200/80 font-semibold">
               <tr>
                 <th className="py-3.5 px-4">Action</th>
                 <th className="py-3.5 px-4">Performed By</th>
@@ -96,19 +101,22 @@ export default function AdminAuditLogsPage() {
                 <th className="py-3.5 px-4">Timestamp</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/80 font-normal">
+            <tbody className="divide-y divide-slate-100 font-normal">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-500">
-                    Loading audit records...
+                  <td colSpan={5} className="py-12 text-center text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      <span>Loading audit trail...</span>
+                    </div>
                   </td>
                 </tr>
               ) : logs.length > 0 ? (
                 logs.map((log) => (
-                  <tr key={log._id} className="hover:bg-slate-800/40 transition-colors">
+                  <tr key={log._id} className="hover:bg-slate-50/70 transition-colors">
                     <td className="py-3.5 px-4">
                       <span
-                        className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getActionBadgeColor(
+                        className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getActionBadgeColor(
                           log.action
                         )}`}
                       >
@@ -116,28 +124,36 @@ export default function AdminAuditLogsPage() {
                       </span>
                     </td>
 
-                    <td className="py-3.5 px-4 font-semibold text-white">
+                    <td className="py-3.5 px-4 font-bold text-slate-900">
                       {log.performedBy}
                     </td>
 
-                    <td className="py-3.5 px-4 text-slate-400">
-                      <span className="font-medium text-slate-300">{log.targetType}</span>
+                    <td className="py-3.5 px-4 text-slate-600">
+                      <span className="font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200/80 text-[11px]">
+                        {log.targetType}
+                      </span>
                     </td>
 
                     <td className="py-3.5 px-4 max-w-md">
-                      <pre className="text-[11px] text-slate-400 font-mono bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 overflow-x-auto">
+                      <pre className="text-[11px] text-slate-700 font-mono bg-slate-50/80 p-2.5 rounded-xl border border-slate-200/80 overflow-x-auto max-h-24">
                         {JSON.stringify(log.details, null, 2)}
                       </pre>
                     </td>
 
-                    <td className="py-3.5 px-4 text-slate-400 whitespace-nowrap">
-                      {new Date(log.createdAt).toLocaleString("en-IN")}
+                    <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
+                      {new Date(log.createdAt).toLocaleString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-500">
+                  <td colSpan={5} className="py-12 text-center text-slate-400">
                     No audit records logged yet.
                   </td>
                 </tr>

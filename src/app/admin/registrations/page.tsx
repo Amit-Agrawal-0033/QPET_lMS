@@ -17,6 +17,8 @@ import {
   Copy,
   Check,
   Sparkles,
+  ShieldCheck,
+  Clock,
 } from "lucide-react";
 
 export default function AdminRegistrationsPage() {
@@ -171,65 +173,78 @@ export default function AdminRegistrationsPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
-          <UserCheck className="w-6 h-6 text-amber-400" />
-          Pending Registrations ({registrations.length})
-        </h1>
-        <p className="text-xs text-slate-400 mt-1">
-          Review student admission applications, assign official enrollment numbers, and create student portal login credentials.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              Pending Registrations
+            </h1>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/80">
+              {registrations.length} Pending
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Review student admission applications, assign official enrollment numbers, and create student portal login credentials.
+          </p>
+        </div>
       </div>
 
       {feedbackMsg && (
         <div
-          className={`p-4 rounded-xl text-xs flex items-center gap-3 border ${
+          className={`p-4 rounded-xl text-xs sm:text-sm flex items-center gap-3 border shadow-sm ${
             feedbackMsg.type === "success"
-              ? "bg-emerald-950/40 border-emerald-800 text-emerald-300"
-              : "bg-rose-950/40 border-rose-800 text-rose-300"
+              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+              : "bg-rose-50 border-rose-200 text-rose-800"
           }`}
         >
           {feedbackMsg.type === "success" ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
           )}
-          <span>{feedbackMsg.text}</span>
+          <span className="font-medium">{feedbackMsg.text}</span>
         </div>
       )}
 
       {/* Registrations List */}
       <div className="space-y-4">
         {loading ? (
-          <div className="text-center py-12 text-xs text-slate-500">
-            Loading pending registrations...
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center text-xs text-slate-500 shadow-sm flex flex-col items-center justify-center gap-3">
+            <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <span>Loading pending applications...</span>
           </div>
         ) : registrations.length > 0 ? (
           registrations.map((reg) => (
             <div
               key={reg._id}
-              className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 transition-all hover:border-slate-700 space-y-4"
+              className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-all space-y-4"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
                 <div>
-                  <h3 className="text-base font-bold text-white">{reg.fullName}</h3>
-                  <p className="text-xs text-slate-400">
-                    Guardian: <strong className="text-slate-300">{reg.fatherOrGuardianName}</strong>
-                    {reg.gender ? ` • ${reg.gender}` : ""}
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-slate-900">{reg.fullName}</h3>
+                    {reg.gender && (
+                      <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200/60">
+                        {reg.gender}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Guardian: <strong className="text-slate-700 font-medium">{reg.fatherOrGuardianName}</strong>
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => openApproveModal(reg)}
-                    className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-teal-600 hover:bg-teal-500 transition-colors flex items-center gap-1.5 shadow-sm"
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-500/20 transition-all flex items-center gap-1.5"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>Approve & Create Credentials</span>
                   </button>
                   <button
                     onClick={() => openRejectModal(reg)}
-                    className="px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-300 bg-rose-950/40 hover:bg-rose-900/50 border border-rose-800 transition-colors flex items-center gap-1.5"
+                    className="px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-600 bg-white hover:bg-rose-50 border border-rose-200/80 transition-colors flex items-center gap-1.5"
                   >
                     <XCircle className="w-3.5 h-3.5" />
                     <span>Reject</span>
@@ -239,94 +254,122 @@ export default function AdminRegistrationsPage() {
 
               {/* Details Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                <div className="space-y-1">
-                  <span className="text-slate-400 block font-medium">Contact & Mobile:</span>
-                  <div className="flex items-center gap-1.5 text-slate-200">
-                    <Phone className="w-3.5 h-3.5 text-teal-400" />
+                <div className="space-y-1.5 bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
+                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                    Contact & Mobile
+                  </span>
+                  <div className="flex items-center gap-2 text-slate-800 font-medium">
+                    <Phone className="w-3.5 h-3.5 text-blue-600" />
                     <span>{reg.mobileNumber}</span>
                   </div>
                   {reg.email && (
-                    <div className="flex items-center gap-1.5 text-slate-400 text-[11px]">
-                      <Mail className="w-3.5 h-3.5 text-slate-500" />
-                      <span>{reg.email}</span>
+                    <div className="flex items-center gap-2 text-slate-500 text-[11px]">
+                      <Mail className="w-3.5 h-3.5 text-slate-400" />
+                      <span className="truncate">{reg.email}</span>
                     </div>
                   )}
                 </div>
 
-                <div className="space-y-1">
-                  <span className="text-slate-400 block font-medium">Desired Course:</span>
-                  <div className="flex items-center gap-1.5 text-slate-200">
-                    <BookOpen className="w-3.5 h-3.5 text-teal-400" />
-                    <span className="font-semibold">{reg.preferredCourseId?.title || "Not selected"}</span>
+                <div className="space-y-1.5 bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
+                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                    Desired Course
+                  </span>
+                  <div className="flex items-center gap-2 text-blue-700 font-semibold">
+                    <BookOpen className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span className="truncate">{reg.preferredCourseId?.title || "Not selected"}</span>
                   </div>
-                  <span className="text-[11px] text-slate-400 block">
-                    Default Fee: ₹{reg.preferredCourseId?.defaultFee || 0} (
-                    {reg.preferredCourseId?.durationMonths || 1} Mos)
+                  <span className="text-[11px] text-slate-500 block">
+                    Default Fee: <strong className="text-slate-700 font-medium">₹{reg.preferredCourseId?.defaultFee || 0}</strong> ({reg.preferredCourseId?.durationMonths || 1} Months)
                   </span>
                 </div>
 
-                <div className="space-y-1">
-                  <span className="text-slate-400 block font-medium">Address & Submitted:</span>
-                  <p className="text-slate-300 line-clamp-2">{reg.address}</p>
-                  <span className="text-[11px] text-slate-500 block">
-                    Applied on: {new Date(reg.registrationDate).toLocaleDateString("en-IN")}
+                <div className="space-y-1.5 bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
+                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                    Address & Date
                   </span>
+                  <div className="flex items-start gap-1.5 text-slate-600">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                    <p className="line-clamp-1">{reg.address}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                    <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                    <span>Applied on: {new Date(reg.registrationDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+                  </div>
                 </div>
               </div>
             </div>
           ))
         ) : (
-          <div className="rounded-2xl bg-slate-900 border border-slate-800 p-12 text-center text-xs text-slate-500">
-            No pending registration requests waiting for approval.
+          <div className="rounded-2xl bg-white border border-slate-200/80 p-12 text-center shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+              <UserCheck className="w-6 h-6" />
+            </div>
+            <h3 className="text-sm font-semibold text-slate-800">No Pending Applications</h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+              All student admission registrations have been processed and enrolled. New submissions from the portal will appear here.
+            </p>
           </div>
         )}
       </div>
 
       {/* Approve & Create Credentials Modal */}
       {isApproveModalOpen && selectedReg && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <FileCheck2 className="w-5 h-5 text-teal-400" />
-                Approve Student & Create Login Credentials
-              </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="w-full max-w-lg bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200/60 flex items-center justify-center text-blue-600">
+                  <FileCheck2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">
+                    Approve Student & Create Account
+                  </h2>
+                  <p className="text-xs text-slate-500">Assign fee structure and student portal login</p>
+                </div>
+              </div>
               <button
                 onClick={() => setIsApproveModalOpen(false)}
-                className="text-slate-400 hover:text-white"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 text-xs space-y-1">
-              <p className="text-white font-bold">{selectedReg.fullName}</p>
-              <p className="text-slate-400">Mobile (Username): {selectedReg.mobileNumber}</p>
-              <p className="text-slate-300">Course: {selectedReg.preferredCourseId?.title}</p>
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-xs space-y-1">
+              <div className="flex items-center justify-between">
+                <p className="text-slate-900 font-bold text-sm">{selectedReg.fullName}</p>
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200/60">
+                  {selectedReg.preferredCourseId?.title}
+                </span>
+              </div>
+              <p className="text-slate-500">
+                Login Mobile / ID: <strong className="text-slate-800 font-medium">{selectedReg.mobileNumber}</strong>
+              </p>
             </div>
 
             <div className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">
-                    Agreed Course Fee (INR)
+                  <label className="block text-slate-700 font-semibold mb-1.5">
+                    Agreed Course Fee (₹)
                   </label>
                   <input
                     type="number"
                     value={agreedFee}
                     onChange={(e) => setAgreedFee(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950/80 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-semibold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">
+                  <label className="block text-slate-700 font-semibold mb-1.5">
                     Payment Arrangement
                   </label>
                   <select
                     value={paymentType}
                     onChange={(e) => setPaymentType(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950/80 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
                   >
                     <option value="full">Full Payment</option>
                     <option value="installment">Installment-Based</option>
@@ -336,13 +379,13 @@ export default function AdminRegistrationsPage() {
 
               {paymentType === "installment" && (
                 <div>
-                  <label className="block text-slate-300 font-medium mb-1">
+                  <label className="block text-slate-700 font-semibold mb-1.5">
                     Number of Installments
                   </label>
                   <select
                     value={installmentCount}
                     onChange={(e) => setInstallmentCount(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950/80 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
                   >
                     <option value="2">2 Monthly Installments</option>
                     <option value="3">3 Monthly Installments</option>
@@ -353,18 +396,18 @@ export default function AdminRegistrationsPage() {
               )}
 
               {/* Login Password Creation by Admin */}
-              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+              <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-teal-300 flex items-center gap-1.5">
-                    <Key className="w-3.5 h-3.5" />
+                  <label className="text-xs font-semibold text-blue-900 flex items-center gap-1.5">
+                    <Key className="w-3.5 h-3.5 text-blue-600" />
                     Set Student Login Password *
                   </label>
                   <button
                     type="button"
                     onClick={generateRandomPassword}
-                    className="text-[11px] text-teal-400 hover:text-teal-300 font-medium flex items-center gap-1"
+                    className="text-[11px] text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 bg-white px-2 py-0.5 rounded-lg border border-blue-200/80 shadow-xs"
                   >
-                    <Sparkles className="w-3 h-3" />
+                    <Sparkles className="w-3 h-3 text-blue-600" />
                     Generate Random
                   </button>
                 </div>
@@ -374,19 +417,19 @@ export default function AdminRegistrationsPage() {
                   onChange={(e) => setStudentPassword(e.target.value)}
                   required
                   placeholder="Minimum 6 characters"
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white font-mono focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-3.5 py-2.5 bg-white border border-blue-200 rounded-xl text-xs text-slate-900 font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
                 />
-                <p className="text-[10px] text-slate-500">
-                  Login ID will be student's mobile number: <strong>{selectedReg.mobileNumber}</strong>
+                <p className="text-[11px] text-slate-500">
+                  Student username will be their mobile number: <strong className="text-slate-800">{selectedReg.mobileNumber}</strong>
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setIsApproveModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white"
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
               >
                 Cancel
               </button>
@@ -394,7 +437,7 @@ export default function AdminRegistrationsPage() {
                 type="button"
                 onClick={handleApprove}
                 disabled={processing}
-                className="px-5 py-2.5 bg-teal-600 hover:bg-teal-500 text-white font-semibold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-sm shadow-blue-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
               >
                 {processing ? "Processing..." : "Approve & Create Account"}
               </button>
@@ -405,55 +448,55 @@ export default function AdminRegistrationsPage() {
 
       {/* Credentials Created Confirmation Modal */}
       {approvedDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl text-center space-y-5">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-2xl text-center space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-7 h-7" />
             </div>
 
             <div className="space-y-1">
-              <h2 className="text-xl font-bold text-white">Student Account Activated!</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-xl font-bold text-slate-900">Student Account Activated!</h2>
+              <p className="text-xs text-slate-500">
                 Enrollment created and login credentials generated successfully.
               </p>
             </div>
 
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs text-left space-y-2">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Student Name:</span>
-                <span className="text-white font-bold">{approvedDetails.studentName}</span>
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs text-left space-y-2.5">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Student Name:</span>
+                <span className="text-slate-900 font-bold">{approvedDetails.studentName}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Enrollment No:</span>
-                <span className="text-teal-400 font-mono font-bold">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Enrollment No:</span>
+                <span className="text-blue-600 font-mono font-bold">
                   {approvedDetails.enrollmentNumber}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Login Mobile:</span>
-                <span className="text-white font-mono font-semibold">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Login Mobile:</span>
+                <span className="text-slate-900 font-mono font-semibold">
                   {approvedDetails.username}
                 </span>
               </div>
-              <div className="flex justify-between items-center pt-1 border-t border-slate-800">
-                <span className="text-slate-400">Password:</span>
-                <span className="text-emerald-300 font-mono font-bold text-sm bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+              <div className="flex justify-between items-center pt-2 border-t border-slate-200/80">
+                <span className="text-slate-500">Password:</span>
+                <span className="text-emerald-700 font-mono font-bold text-sm bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
                   {approvedDetails.password}
                 </span>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 pt-1">
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
               <button
                 onClick={copyCredentials}
-                className="flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 transition-colors flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 px-4 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200/80 transition-colors flex items-center justify-center gap-1.5"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? "Copied!" : "Copy Details to Share"}</span>
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copied ? "Copied to Clipboard!" : "Copy Details to Share"}</span>
               </button>
               <button
                 onClick={() => setApprovedDetails(null)}
-                className="py-2.5 px-5 rounded-xl text-xs font-semibold bg-teal-600 hover:bg-teal-500 text-white transition-colors"
+                className="py-2.5 px-6 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-500/20 transition-all"
               >
                 Done
               </button>
@@ -464,27 +507,31 @@ export default function AdminRegistrationsPage() {
 
       {/* Reject Modal */}
       {isRejectModalOpen && selectedReg && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <XCircle className="w-5 h-5 text-rose-400" />
-                Reject Registration Request
-              </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600">
+                  <XCircle className="w-4 h-4" />
+                </div>
+                <h2 className="text-base font-bold text-slate-900">
+                  Reject Application
+                </h2>
+              </div>
               <button
                 onClick={() => setIsRejectModalOpen(false)}
-                className="text-slate-400 hover:text-white"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-300">
-              Are you sure you want to reject registration for <strong>{selectedReg.fullName}</strong>?
+            <p className="text-xs text-slate-600">
+              Are you sure you want to reject the registration application for <strong className="text-slate-900">{selectedReg.fullName}</strong>?
             </p>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Reason for Rejection
               </label>
               <textarea
@@ -492,15 +539,15 @@ export default function AdminRegistrationsPage() {
                 onChange={(e) => setRejectionReason(e.target.value)}
                 rows={3}
                 placeholder="e.g. Incomplete details, age criteria not met, etc."
-                className="w-full px-3 py-2 bg-slate-950/80 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:ring-2 focus:ring-rose-500 resize-none"
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 resize-none"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setIsRejectModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white"
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
               >
                 Cancel
               </button>
@@ -508,7 +555,7 @@ export default function AdminRegistrationsPage() {
                 type="button"
                 onClick={handleReject}
                 disabled={processing}
-                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs rounded-xl shadow-md transition-all"
+                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-xl shadow-sm shadow-rose-500/20 transition-all disabled:opacity-50"
               >
                 {processing ? "Rejecting..." : "Confirm Rejection"}
               </button>

@@ -9,6 +9,7 @@ try {
 }
 
 const MONGODB_URI = process.env.MONGODB_URI;
+const LOCAL_FALLBACK_URI = "mongodb://127.0.0.1:27017/qpet_lms";
 
 if (!MONGODB_URI) {
   throw new Error("Please define the MONGODB_URI environment variable in .env.local");
@@ -31,20 +32,37 @@ if (!global.mongooseCache) {
 }
 
 export async function connectDB(): Promise<typeof mongoose> {
-  if (cached.conn) {
+  if (cached.conn && cached.conn.connection.readyState === 1) {
     return cached.conn;
   }
 
   if (!cached.promise) {
-    const opts = {
+    const primaryOpts = {
       bufferCommands: false,
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 4000,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI as string, opts).then((m) => {
-      return m;
-    });
+    cached.promise = (async () => {
+      try {
+        return await mongoose.connect(MONGODB_URI as string, primaryOpts);
+      } catch (err: any) {
+        console.warn(
+          "⚠️ Primary MongoDB connection failed (likely Atlas IP whitelist or network issue):",
+          err.message || err
+        );
+        console.log("🔄 Connecting to local MongoDB server fallback (mongodb://127.0.0.1:27017/qpet_lms)...");
+        try {
+          return await mongoose.connect(LOCAL_FALLBACK_URI, {
+            bufferCommands: false,
+            serverSelectionTimeoutMS: 3000,
+          });
+        } catch (localErr) {
+          console.error("❌ Both Primary and Local MongoDB connections failed:", localErr);
+          throw err;
+        }
+      }
+    })();
   }
 
   try {
