@@ -22,12 +22,59 @@ export async function requireAdmin(): Promise<
   if (session.role !== "admin") {
     return {
       response: NextResponse.json(
-        { error: "Forbidden: Admin access required." },
+        { error: "Forbidden: Administrator access required." },
         { status: 403 }
       ),
     };
   }
   return { session };
+}
+
+export async function requireTrainer(): Promise<
+  { session: SessionPayload; response?: undefined } | { session?: undefined; response: NextResponse }
+> {
+  const { session, response } = await requireAuth();
+  if (response) return { response };
+
+  if (session.role !== "trainer") {
+    return {
+      response: NextResponse.json(
+        { error: "Forbidden: Trainer access required." },
+        { status: 403 }
+      ),
+    };
+  }
+  return { session };
+}
+
+export async function requireAdminOrTrainer(permissionKey?: string): Promise<
+  { session: SessionPayload; response?: undefined } | { session?: undefined; response: NextResponse }
+> {
+  const { session, response } = await requireAuth();
+  if (response) return { response };
+
+  if (session.role === "admin") {
+    return { session };
+  }
+
+  if (session.role === "trainer") {
+    if (permissionKey && !session.permissions?.[permissionKey]) {
+      return {
+        response: NextResponse.json(
+          { error: `Forbidden: You do not have permission (${permissionKey}) to perform this action or view this section.` },
+          { status: 403 }
+        ),
+      };
+    }
+    return { session };
+  }
+
+  return {
+    response: NextResponse.json(
+      { error: "Forbidden: Administrative or Trainer clearance required." },
+      { status: 403 }
+    ),
+  };
 }
 
 export async function requireStudent(): Promise<

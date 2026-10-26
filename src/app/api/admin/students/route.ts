@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/guards";
+import { requireAdminOrTrainer } from "@/lib/auth/guards";
 import { connectDB } from "@/lib/db/mongoose";
 import { StudentProfile } from "@/lib/models/StudentProfile";
 import { User } from "@/lib/models/User";
@@ -11,7 +11,7 @@ import { logAudit } from "@/lib/services/audit.service";
 import { hashPassword } from "@/lib/auth/session";
 
 export async function GET(req: NextRequest) {
-  const { response } = await requireAdmin();
+  const { response } = await requireAdminOrTrainer("viewStudents");
   if (response) return response;
 
   try {
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { session, response } = await requireAdmin();
+  const { session, response } = await requireAdminOrTrainer("editStudents");
   if (response) return response;
 
   try {
@@ -266,7 +266,7 @@ export async function POST(req: NextRequest) {
 
 // PUT: Edit Student Registration Details
 export async function PUT(req: NextRequest) {
-  const { session, response } = await requireAdmin();
+  const { session, response } = await requireAdminOrTrainer("editStudents");
   if (response) return response;
 
   try {
@@ -376,7 +376,7 @@ export async function PUT(req: NextRequest) {
 
 // PATCH: Password Reset, Mark as Dropped / Inactive, or Reactivate
 export async function PATCH(req: NextRequest) {
-  const { session, response } = await requireAdmin();
+  const { session, response } = await requireAdminOrTrainer("editStudents");
   if (response) return response;
 
   try {

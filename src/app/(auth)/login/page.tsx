@@ -23,6 +23,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [role, setRole] = useState<"student" | "admin">("student");
+  const [staffRole, setStaffRole] = useState<"admin" | "trainer">("admin");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -30,7 +31,7 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent, activeRole: "student" | "admin") => {
+  const handleSubmit = async (e: React.FormEvent, activeRole: "student" | "admin" | "trainer") => {
     e.preventDefault();
     setError(null);
     setIsPending(false);
@@ -60,7 +61,7 @@ function LoginForm() {
       }
 
       // Success redirect
-      if (data.user.role === "admin") {
+      if (data.user.role === "admin" || data.user.role === "trainer") {
         router.push("/admin/dashboard");
       } else {
         router.push("/student/dashboard");
@@ -98,10 +99,12 @@ function LoginForm() {
           <p className="text-xs text-purple-100/80 mt-1 max-w-xs">
             {role === "student"
               ? "Access your student courses, fees, and verified certificates."
-              : "Institutional management & fee collection portal."}
+              : staffRole === "admin"
+              ? "Institutional administration & governance portal."
+              : "Faculty access for assigned batches & curriculum."}
           </p>
 
-          <div className="grid grid-cols-2 p-1 bg-white/10 backdrop-blur-md rounded-2xl mt-5 w-full max-w-xs border border-white/20">
+          <div className="grid grid-cols-3 p-1 bg-white/10 backdrop-blur-md rounded-2xl mt-5 w-full max-w-xs border border-white/20">
             <button
               type="button"
               onClick={() => handleRoleSwitch("student")}
@@ -111,18 +114,39 @@ function LoginForm() {
                   : "text-white/80 hover:text-white"
               }`}
             >
-              Student Login
+              Student
             </button>
             <button
               type="button"
-              onClick={() => handleRoleSwitch("admin")}
+              onClick={() => {
+                setRole("admin");
+                setStaffRole("trainer");
+                setError(null);
+                setIsPending(false);
+              }}
               className={`py-2 text-xs font-bold rounded-xl transition-all ${
-                role === "admin"
+                role === "admin" && staffRole === "trainer"
                   ? "bg-white text-[#631349] shadow-md"
                   : "text-white/80 hover:text-white"
               }`}
             >
-              Admin Login
+              Trainer
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setRole("admin");
+                setStaffRole("admin");
+                setError(null);
+                setIsPending(false);
+              }}
+              className={`py-2 text-xs font-bold rounded-xl transition-all ${
+                role === "admin" && staffRole === "admin"
+                  ? "bg-white text-[#631349] shadow-md"
+                  : "text-white/80 hover:text-white"
+              }`}
+            >
+              Admin
             </button>
           </div>
         </div>
@@ -284,7 +308,7 @@ function LoginForm() {
       >
         <div className="w-full max-w-sm mx-auto">
           {/* Brand Badge */}
-          <div className="hidden md:flex items-center gap-2.5 mb-6">
+          <div className="hidden md:flex items-center gap-2.5 mb-5">
             <div className="w-10 h-10 rounded-xl bg-white p-1 border border-slate-200/80 shadow-xs flex items-center justify-center overflow-hidden">
               <Image
                 src="/images/QPET PNG.png"
@@ -298,20 +322,56 @@ function LoginForm() {
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-extrabold text-base tracking-tight text-slate-900">QPET</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-700 font-bold border border-purple-200">
-                  STAFF
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-700 font-bold border border-purple-200 uppercase">
+                  {staffRole} Portal
                 </span>
               </div>
-              <p className="text-[10px] text-slate-500 font-medium">Administration Portal</p>
+              <p className="text-[10px] text-slate-500 font-medium">Faculty & Administration</p>
             </div>
           </div>
 
-          <div className="mb-6">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          {/* Role Pill Switcher (Admin vs Trainer) */}
+          <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl mb-5 border border-slate-200/80">
+            <button
+              type="button"
+              onClick={() => {
+                setStaffRole("admin");
+                setError(null);
+              }}
+              className={`py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                staffRole === "admin"
+                  ? "bg-white text-purple-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              <Shield className="w-3.5 h-3.5 text-purple-600" />
               Admin Portal
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setStaffRole("trainer");
+                setError(null);
+              }}
+              className={`py-1.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                staffRole === "trainer"
+                  ? "bg-white text-purple-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              <GraduationCap className="w-3.5 h-3.5 text-orange-600" />
+              Trainer Portal
+            </button>
+          </div>
+
+          <div className="mb-5">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              {staffRole === "admin" ? "Admin Portal" : "Trainer Portal"}
             </h2>
-            <p className="text-xs text-slate-500 mt-1.5">
-              Authorized institute staff login for admission & fee controls.
+            <p className="text-xs text-slate-500 mt-1">
+              {staffRole === "admin"
+                ? "Institutional administration, security governance & system controls."
+                : "Faculty access for assigned batches, course logs & records."}
             </p>
           </div>
 
@@ -326,21 +386,21 @@ function LoginForm() {
             </div>
           )}
 
-          {/* Admin Form */}
-          <form onSubmit={(e) => handleSubmit(e, "admin")} className="space-y-4">
+          {/* Staff Form */}
+          <form onSubmit={(e) => handleSubmit(e, staffRole)} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Admin Identifier / Email
+                {staffRole === "admin" ? "Admin Email / Identifier" : "Trainer Email / Mobile / ID"}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <Shield className="w-4 h-4" />
+                  {staffRole === "admin" ? <Shield className="w-4 h-4" /> : <User className="w-4 h-4" />}
                 </div>
                 <input
                   type="text"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="admin@qpet.org"
+                  placeholder={staffRole === "admin" ? "admin077@qpet.in" : "e.g. trainer@qpet.in or Mobile"}
                   required
                   className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
                 />
@@ -349,7 +409,7 @@ function LoginForm() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Admin Password
+                {staffRole === "admin" ? "Admin Password" : "Trainer Password"}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -382,17 +442,18 @@ function LoginForm() {
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  <span>Sign In as Admin</span>
+                  <span>{staffRole === "admin" ? "Sign In as Admin" : "Sign In as Trainer"}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
 
-          {/* Admin Helper Link */}
+          {/* Secure Audit Notice (Replacing the default credentials text) */}
           <div className="mt-6 pt-5 border-t border-slate-100 text-center">
-            <p className="text-[11px] text-slate-500">
-              Default access: <span className="font-mono text-slate-700 font-semibold">admin@qpet.org</span> / <span className="font-mono text-slate-700 font-semibold">Admin@QPET2026</span>
+            <p className="text-[11px] text-slate-400 flex items-center justify-center gap-1.5 font-medium">
+              <Lock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>Protected Portal • Authorized Role-Based Clearance Only</span>
             </p>
           </div>
         </div>
@@ -467,14 +528,14 @@ function LoginForm() {
 
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-white/90 text-[11px] font-bold uppercase tracking-wider mb-4 border border-white/15">
               <Shield className="w-3.5 h-3.5 text-orange-300" />
-              Administration Portal
+              Faculty & Staff Portal
             </span>
 
             <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-white mb-3">
               Welcome, Friend!
             </h2>
             <p className="text-xs sm:text-sm text-purple-100/90 max-w-xs leading-relaxed mb-8">
-              Are you an authorized QPET administrator? Sign in here to manage student admissions, approve enrollments, and record fee receipts.
+              Are you an authorized QPET administrator or trainer? Sign in here to manage admissions, enrollments, course records, and audit reports.
             </p>
 
             <button
@@ -482,7 +543,7 @@ function LoginForm() {
               onClick={() => handleRoleSwitch("admin")}
               className="px-9 py-3 border-2 border-white text-white text-xs font-bold tracking-wider uppercase rounded-full hover:bg-white hover:text-[#581c4c] transition-all duration-300 shadow-lg active:scale-95 cursor-pointer"
             >
-              Admin Sign In
+              Staff Sign In
             </button>
           </div>
         </div>

@@ -16,6 +16,7 @@ import {
   X,
   User,
   Calendar,
+  Lock,
 } from "lucide-react";
 
 export default function AdminCertificatesPage() {
@@ -23,6 +24,13 @@ export default function AdminCertificatesPage() {
   const [eligibleEnrollments, setEligibleEnrollments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [currentUser, setCurrentUser] = useState<{
+    id: string;
+    identifier: string;
+    role: "admin" | "trainer" | "student";
+    name?: string;
+    permissions?: Record<string, boolean>;
+  } | null>(null);
 
   // Modals
   const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
@@ -37,13 +45,24 @@ export default function AdminCertificatesPage() {
   });
   const [revokeReason, setRevokeReason] = useState("");
   const [processing, setProcessing] = useState(false);
-  const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string; downloadId?: string } | null>(
     null
   );
 
   useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.authenticated && d.user) setCurrentUser(d.user);
+      })
+      .catch(() => {});
     fetchData();
   }, []);
+
+  const canGenerate =
+    currentUser?.role === "admin" ||
+    !!(currentUser?.permissions?.generateCertificates || currentUser?.permissions?.editCertificates);
+  const isAdmin = currentUser?.role === "admin";
 
   const fetchData = async () => {
     try {
@@ -111,7 +130,11 @@ export default function AdminCertificatesPage() {
         return;
       }
 
-      setFeedback({ type: "success", text: data.message });
+      setFeedback({
+        type: "success",
+        text: data.message || "Certificate generated successfully.",
+        downloadId: data.certificate?._id,
+      });
       setIsIssueModalOpen(false);
       fetchData();
     } catch (err: any) {
@@ -172,22 +195,77 @@ export default function AdminCertificatesPage() {
             Manual authorization, issue official completion certificates, and manage revocation.
           </p>
         </div>
+
+        <div className="flex items-center gap-3">
+          {canGenerate ? (
+            <button
+              onClick={() => {
+                if (eligibleEnrollments.length > 0) {
+                  openIssueModal(eligibleEnrollments[0]);
+                } else {
+                  setFeedback({
+                    type: "error",
+                    text: "No eligible cleared enrollments currently available to generate a certificate.",
+                  });
+                }
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/25 active:scale-95 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Generate Certificate</span>
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold">
+              <Lock className="w-3.5 h-3.5 text-amber-600" />
+              <span>Generation Restricted (View Only)</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {feedback && (
         <div
-          className={`p-4 rounded-xl text-xs sm:text-sm flex items-center gap-3 border shadow-sm ${
+          className={`p-4 rounded-xl text-xs sm:text-sm flex items-center justify-between gap-3 border shadow-sm ${
             feedback.type === "success"
               ? "bg-emerald-50 border-emerald-200 text-emerald-800"
               : "bg-rose-50 border-rose-200 text-rose-800"
           }`}
         >
-          {feedback.type === "success" ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          ) : (
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+          <div className="flex items-center gap-3">
+            {feedback.type === "success" ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            )}
+            <span className="font-medium">{feedback.text}</span>
+          </div>
+
+          {feedback.downloadId && (
+            <a
+              href={`/api/pdf/certificate/${feedback.downloadId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs shrink-0"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Download PDF</span>
+            </a>
           )}
-          <span className="font-medium">{feedback.text}</span>
+        </div>
+      )}
+
+      {/* Trainer Permission Warning if Restricted */}
+      {currentUser?.role === "trainer" && !canGenerate && (
+        <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-950 text-xs flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>
+              <strong>Trainer Notice:</strong> Certificate generation permission is currently not enabled for your account. You can view and download issued certificates. Please request Administrator authorization to generate student certificates.
+            </span>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white text-amber-800 border border-amber-200 shrink-0">
+            PERMISSION REQUIRED
+          </span>
         </div>
       )}
 
@@ -204,7 +282,7 @@ export default function AdminCertificatesPage() {
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Students who have fully cleared their course fee balance. Explicit admin authorization is required to issue.
+              Students who have fully cleared their course fee balance. Explicit authorization is required to generate.
             </p>
           </div>
         </div>
@@ -224,12 +302,20 @@ export default function AdminCertificatesPage() {
                     Fee Cleared (₹0 Bal)
                   </span>
                 </div>
-                <button
-                  onClick={() => openIssueModal(enr)}
-                  className="shrink-0 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-all shadow-sm shadow-blue-500/20"
-                >
-                  Issue
-                </button>
+
+                {canGenerate ? (
+                  <button
+                    onClick={() => openIssueModal(enr)}
+                    className="shrink-0 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-all shadow-sm shadow-blue-500/20 cursor-pointer"
+                  >
+                    Generate
+                  </button>
+                ) : (
+                  <span className="shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-400 font-semibold text-[10px] border border-slate-200 flex items-center gap-1 select-none">
+                    <Lock className="w-3 h-3" />
+                    Locked
+                  </span>
+                )}
               </div>
             ))}
           </div>
@@ -350,12 +436,14 @@ export default function AdminCertificatesPage() {
                                 <Download className="w-3.5 h-3.5" />
                                 <span>PDF</span>
                               </a>
-                              <button
-                                onClick={() => openRevokeModal(cert)}
-                                className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/80 hover:bg-rose-100 transition-colors"
-                              >
-                                Revoke
-                              </button>
+                              {isAdmin && (
+                                <button
+                                  onClick={() => openRevokeModal(cert)}
+                                  className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/80 hover:bg-rose-100 transition-colors"
+                                >
+                                  Revoke
+                                </button>
+                              )}
                             </>
                           )}
                           <Link
@@ -409,10 +497,37 @@ export default function AdminCertificatesPage() {
               </button>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-xs space-y-1">
-              <p className="text-slate-900 font-bold text-sm">{selectedEnrollment.studentId?.fullName}</p>
-              <p className="font-mono text-blue-600 font-semibold">{selectedEnrollment.enrollmentNumber}</p>
+            {eligibleEnrollments.length > 1 && (
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1.5">Select Eligible Student / Enrollment</label>
+                <select
+                  value={selectedEnrollment._id}
+                  onChange={(e) => {
+                    const found = eligibleEnrollments.find((en: any) => en._id === e.target.value);
+                    if (found) setSelectedEnrollment(found);
+                  }}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                >
+                  {eligibleEnrollments.map((en: any) => (
+                    <option key={en._id} value={en._id}>
+                      {en.studentId?.fullName} ({en.enrollmentNumber}) — {en.courseNameSnapshot}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs space-y-1">
+              <div className="flex items-center justify-between">
+                <p className="text-slate-900 font-bold text-sm">{selectedEnrollment.studentId?.fullName || "Student"}</p>
+                <span className="font-mono text-blue-600 font-semibold bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded text-[11px]">
+                  {selectedEnrollment.enrollmentNumber}
+                </span>
+              </div>
               <p className="text-slate-600">{selectedEnrollment.courseNameSnapshot}</p>
+              {selectedEnrollment.studentId?.mobile && (
+                <p className="text-slate-400 text-[11px]">Mobile: {selectedEnrollment.studentId.mobile}</p>
+              )}
             </div>
 
             <form onSubmit={handleIssueCertificate} className="space-y-4 text-xs">

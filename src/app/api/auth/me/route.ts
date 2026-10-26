@@ -25,8 +25,9 @@ export async function GET() {
       id: session.userId,
       identifier: session.identifier,
       role: session.role,
-      name: session.name,
+      name: user?.name || session.name,
       status: user?.status,
+      permissions: user?.permissions || session.permissions || {},
     },
     studentProfile: profile,
   });

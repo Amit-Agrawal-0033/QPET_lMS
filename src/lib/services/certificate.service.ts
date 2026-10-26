@@ -12,14 +12,33 @@ export interface IssueCertificateInput {
   customCertificateNumber?: string;
   issueDate?: Date;
   grade?: string;
-  adminUserId: string;
-  adminUserName: string;
+  performedByUserId?: string;
+  performedByUserName?: string;
+  performedByUserRole?: "admin" | "trainer";
+  adminUserId?: string;
+  adminUserName?: string;
+  ipAddress?: string;
 }
 
 export async function issueCertificate(input: IssueCertificateInput): Promise<ICertificate> {
   await connectDB();
 
-  const { enrollmentId, customCertificateNumber, issueDate, grade, adminUserId, adminUserName } = input;
+  const {
+    enrollmentId,
+    customCertificateNumber,
+    issueDate,
+    grade,
+    performedByUserId,
+    performedByUserName,
+    performedByUserRole,
+    adminUserId,
+    adminUserName,
+    ipAddress,
+  } = input;
+
+  const finalUserId = performedByUserId || adminUserId || "";
+  const finalUserName = performedByUserName || adminUserName || "QPET Staff";
+  const finalUserRole = performedByUserRole || "admin";
 
   const enrollment = await Enrollment.findById(enrollmentId);
   if (!enrollment) {
@@ -56,8 +75,8 @@ export async function issueCertificate(input: IssueCertificateInput): Promise<IC
     issueDate: issueDate || new Date(),
     status: "issued",
     grade: grade?.trim() || "A",
-    issuedByAdminId: new mongoose.Types.ObjectId(adminUserId),
-    issuedByAdminName: adminUserName,
+    issuedByAdminId: new mongoose.Types.ObjectId(finalUserId),
+    issuedByAdminName: `${finalUserName} (${finalUserRole.toUpperCase()})`,
     verificationToken,
   });
 
@@ -67,18 +86,28 @@ export async function issueCertificate(input: IssueCertificateInput): Promise<IC
   enrollment.certificateStatus = "issued";
   await enrollment.save();
 
-  // Audit log
+  // Comprehensive audit log
   await logAudit({
-    action: "CERTIFICATE_ISSUED",
-    performedBy: adminUserName,
+    action: "CERTIFICATE_GENERATED",
+    performedBy: `${finalUserName} (ID: ${finalUserId})`,
+    performedByRole: finalUserRole,
     targetType: "Certificate",
     targetId: certificate._id.toString(),
     details: {
       certificateNumber: certNumber,
-      enrollmentNumber: enrollment.enrollmentNumber,
+      generatorName: finalUserName,
+      generatorId: finalUserId,
+      generatorRole: finalUserRole,
+      studentId: student._id.toString(),
       studentName: student.fullName,
+      studentMobile: student.mobileNumber,
+      enrollmentNumber: enrollment.enrollmentNumber,
       courseName: enrollment.courseNameSnapshot,
+      courseDuration: certificate.courseDuration,
+      grade: certificate.grade,
+      generatedAt: certificate.issueDate,
     },
+    ipAddress: ipAddress || "system",
   });
 
   return certificate;

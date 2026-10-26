@@ -9,9 +9,10 @@ export const COOKIE_NAME = "qpet_session";
 export interface SessionPayload {
   userId: string;
   identifier: string;
-  role: "admin" | "student";
+  role: "admin" | "trainer" | "student";
   studentProfileId?: string;
   name?: string;
+  permissions?: Record<string, boolean | undefined>;
 }
 
 export async function hashPassword(plainText: string): Promise<string> {

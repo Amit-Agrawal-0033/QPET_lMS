@@ -1,12 +1,34 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
+export interface IUserPermissions {
+  viewStudents?: boolean;
+  editStudents?: boolean;
+  viewRegistrations?: boolean;
+  editRegistrations?: boolean;
+  viewCourses?: boolean;
+  editCourses?: boolean;
+  viewEnrollments?: boolean;
+  editEnrollments?: boolean;
+  viewFees?: boolean;
+  editFees?: boolean;
+  viewReceipts?: boolean;
+  viewCertificates?: boolean;
+  editCertificates?: boolean;
+  generateCertificates?: boolean;
+  viewReports?: boolean;
+  viewAuditReports?: boolean;
+  [key: string]: boolean | undefined;
+}
+
 export interface IUser extends Document {
   identifier: string; // email or mobile number
+  name?: string;
   email?: string;
   mobileNumber?: string;
   passwordHash: string;
-  role: "admin" | "student";
+  role: "admin" | "trainer" | "student";
   status: "active" | "inactive" | "pending";
+  permissions?: IUserPermissions;
   studentProfileId?: mongoose.Types.ObjectId;
   lastLogin?: Date;
   createdAt: Date;
@@ -21,6 +43,10 @@ const UserSchema = new Schema<IUser>(
       unique: true,
       trim: true,
       index: true,
+    },
+    name: {
+      type: String,
+      trim: true,
     },
     email: {
       type: String,
@@ -41,7 +67,7 @@ const UserSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ["admin", "student"],
+      enum: ["admin", "trainer", "student"],
       default: "student",
       required: true,
       index: true,
@@ -51,6 +77,10 @@ const UserSchema = new Schema<IUser>(
       enum: ["active", "inactive", "pending"],
       default: "active",
       index: true,
+    },
+    permissions: {
+      type: Schema.Types.Mixed,
+      default: {},
     },
     studentProfileId: {
       type: Schema.Types.ObjectId,

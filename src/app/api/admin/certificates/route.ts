@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/guards";
+import { requireAdminOrTrainer } from "@/lib/auth/guards";
 import { connectDB } from "@/lib/db/mongoose";
 import { Certificate } from "@/lib/models/Certificate";
 import { Enrollment } from "@/lib/models/Enrollment";
 import { issueCertificate, revokeCertificate } from "@/lib/services/certificate.service";
 
 export async function GET(req: NextRequest) {
-  const { response } = await requireAdmin();
+  const { response } = await requireAdminOrTrainer("viewCertificates");
   if (response) return response;
 
   try {
@@ -52,8 +52,19 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { session, response } = await requireAdmin();
+  const { session, response } = await requireAdminOrTrainer();
   if (response) return response;
+
+  // RBAC Check: Admin has full access. Trainer requires 'generateCertificates' or 'editCertificates' permission.
+  if (session.role === "trainer") {
+    const canGenerate = session.permissions?.generateCertificates || session.permissions?.editCertificates;
+    if (!canGenerate) {
+      return NextResponse.json(
+        { error: "Forbidden: You do not have permission (Generate Certificate) to generate student certificates. Please contact administrator." },
+        { status: 403 }
+      );
+    }
+  }
 
   try {
     const body = await req.json();
@@ -63,18 +74,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Enrollment ID is required." }, { status: 400 });
     }
 
+    const clientIp = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "localhost";
+
     const cert = await issueCertificate({
       enrollmentId,
       customCertificateNumber,
       issueDate: issueDate ? new Date(issueDate) : undefined,
       grade,
-      adminUserId: session.userId,
-      adminUserName: session.name || "Administrator",
+      performedByUserId: session.userId,
+      performedByUserName: session.name || session.identifier,
+      performedByUserRole: session.role === "admin" ? "admin" : "trainer",
+      ipAddress: clientIp,
     });
 
     return NextResponse.json({
       success: true,
-      message: `Certificate ${cert.certificateNumber} issued successfully.`,
+      message: `Certificate ${cert.certificateNumber} generated successfully.`,
       certificate: cert,
     });
   } catch (error: any) {
@@ -87,7 +102,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const { session, response } = await requireAdmin();
+  const { session, response } = await requireAdminOrTrainer("editCertificates");
   if (response) return response;
 
   try {

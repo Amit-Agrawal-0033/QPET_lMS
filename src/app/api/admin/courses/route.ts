@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/guards";
+import { requireAdminOrTrainer } from "@/lib/auth/guards";
 import { connectDB } from "@/lib/db/mongoose";
 import { Course } from "@/lib/models/Course";
 import { Enrollment } from "@/lib/models/Enrollment";
+import { logAudit } from "@/lib/services/audit.service";
 
 export async function GET() {
   try {
@@ -30,7 +31,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { session, response } = await requireAdmin();
+  const { session, response } = await requireAdminOrTrainer("editCourses");
   if (response) return response;
 
   try {
@@ -73,6 +74,15 @@ export async function POST(req: NextRequest) {
 
     await course.save();
 
+    await logAudit({
+      action: "COURSE_CREATED",
+      performedBy: session.name || session.identifier,
+      performedByRole: session.role,
+      targetType: "Course",
+      targetId: course._id.toString(),
+      details: { code: course.code, title: course.title, fee: course.defaultFee },
+    });
+
     return NextResponse.json({ success: true, course }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Failed to create course." }, { status: 500 });
@@ -80,7 +90,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const { session, response } = await requireAdmin();
+  const { session, response } = await requireAdminOrTrainer("editCourses");
   if (response) return response;
 
   try {

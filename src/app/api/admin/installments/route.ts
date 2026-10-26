@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/guards";
+import { requireAdminOrTrainer } from "@/lib/auth/guards";
 import { connectDB } from "@/lib/db/mongoose";
 import { Installment } from "@/lib/models/Installment";
 
 export async function GET(req: NextRequest) {
-  const { response } = await requireAdmin();
+  const { response } = await requireAdminOrTrainer("viewFees");
   if (response) return response;
 
   try {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth/guards";
+import { requireAdminOrTrainer } from "@/lib/auth/guards";
 import { connectDB } from "@/lib/db/mongoose";
 import { StudentProfile } from "@/lib/models/StudentProfile";
 import { User } from "@/lib/models/User";
@@ -11,7 +11,7 @@ import { logAudit } from "@/lib/services/audit.service";
 import { hashPassword } from "@/lib/auth/session";
 
 export async function GET() {
-  const { response } = await requireAdmin();
+  const { response } = await requireAdminOrTrainer("viewRegistrations");
   if (response) return response;
 
   try {
@@ -31,7 +31,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  const { session, response } = await requireAdmin();
+  const { session, response } = await requireAdminOrTrainer("editRegistrations");
   if (response) return response;
 
   try {

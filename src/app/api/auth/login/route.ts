@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/db/mongoose";
 import { User } from "@/lib/models/User";
 import { StudentProfile } from "@/lib/models/StudentProfile";
 import { verifyPassword, setSessionCookie } from "@/lib/auth/session";
+import { logAudit } from "@/lib/services/audit.service";
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,11 +37,20 @@ export async function POST(req: NextRequest) {
     }
 
     // Role check if explicitly provided
-    if (role && user.role !== role) {
-      return NextResponse.json(
-        { error: `Account exists, but is not authorized for the ${role} portal.` },
-        { status: 403 }
-      );
+    if (role) {
+      if (role === "staff") {
+        if (user.role !== "admin" && user.role !== "trainer") {
+          return NextResponse.json(
+            { error: "Account exists, but is not authorized for staff access." },
+            { status: 403 }
+          );
+        }
+      } else if (user.role !== role) {
+        return NextResponse.json(
+          { error: `Account exists, but is not authorized for the ${role} portal.` },
+          { status: 403 }
+        );
+      }
     }
 
     // Verify status
@@ -79,25 +89,47 @@ export async function POST(req: NextRequest) {
     user.lastLogin = new Date();
     await user.save();
 
-    // Fetch student name if student
-    let studentName = "";
-    if (user.studentProfileId) {
-      const student = await StudentProfile.findById(user.studentProfileId);
-      if (student) {
-        studentName = student.fullName;
+    // Determine display name
+    let displayName = "";
+    if (user.role === "student") {
+      if (user.studentProfileId) {
+        const student = await StudentProfile.findById(user.studentProfileId);
+        if (student) {
+          displayName = student.fullName;
+        }
       }
     } else if (user.role === "admin") {
-      studentName = "QPET Administrator";
+      displayName = user.name || "QPET Administrator";
+    } else if (user.role === "trainer") {
+      displayName = user.name || "QPET Trainer";
     }
 
-    // Set HTTP-only session cookie
+    // Set HTTP-only session cookie with role and permissions
     await setSessionCookie({
       userId: user._id.toString(),
       identifier: user.identifier,
       role: user.role,
       studentProfileId: user.studentProfileId?.toString(),
-      name: studentName,
+      name: displayName,
+      permissions: user.permissions || {},
     });
+
+    // Record login audit log for admin and trainer activities
+    if (user.role === "admin" || user.role === "trainer") {
+      const clientIp = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "localhost";
+      await logAudit({
+        action: "USER_LOGGED_IN",
+        performedBy: displayName ? `${displayName} (${user.identifier})` : user.identifier,
+        performedByRole: user.role,
+        targetType: "AUTH",
+        targetId: user._id.toString(),
+        details: {
+          identifier: user.identifier,
+          role: user.role,
+        },
+        ipAddress: clientIp,
+      });
+    }
 
     return NextResponse.json({
       success: true,
@@ -105,7 +137,8 @@ export async function POST(req: NextRequest) {
         id: user._id.toString(),
         identifier: user.identifier,
         role: user.role,
-        name: studentName,
+        name: displayName,
+        permissions: user.permissions || {},
       },
     });
   } catch (error: any) {

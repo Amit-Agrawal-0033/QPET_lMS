@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Users,
   UserCheck,
+  UserCog,
   BookOpen,
   FileCheck2,
   CreditCard,
@@ -22,17 +23,26 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-const navItems = [
+interface NavItem {
+  label: string;
+  href: string;
+  icon: any;
+  requiredPerm?: string;
+  adminOnly?: boolean;
+}
+
+const navItems: NavItem[] = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { label: "Students", href: "/admin/students", icon: Users },
-  { label: "Registrations", href: "/admin/registrations", icon: UserCheck },
-  { label: "Courses", href: "/admin/courses", icon: BookOpen },
-  { label: "Enrollments", href: "/admin/enrollments", icon: FileCheck2 },
-  { label: "Fees & Payments", href: "/admin/fees", icon: CreditCard },
-  { label: "Fee Receipts", href: "/admin/receipts", icon: Receipt },
-  { label: "Certificates", href: "/admin/certificates", icon: Award },
-  { label: "Reports & Export", href: "/admin/reports", icon: FileSpreadsheet },
-  { label: "Audit Logs", href: "/admin/audit-logs", icon: ShieldAlert },
+  { label: "Trainer Management", href: "/admin/trainers", icon: UserCog, adminOnly: true },
+  { label: "Students", href: "/admin/students", icon: Users, requiredPerm: "viewStudents" },
+  { label: "Registrations", href: "/admin/registrations", icon: UserCheck, requiredPerm: "viewRegistrations" },
+  { label: "Courses", href: "/admin/courses", icon: BookOpen, requiredPerm: "viewCourses" },
+  { label: "Enrollments", href: "/admin/enrollments", icon: FileCheck2, requiredPerm: "viewEnrollments" },
+  { label: "Fees & Payments", href: "/admin/fees", icon: CreditCard, requiredPerm: "viewFees" },
+  { label: "Fee Receipts", href: "/admin/receipts", icon: Receipt, requiredPerm: "viewReceipts" },
+  { label: "Certificates", href: "/admin/certificates", icon: Award, requiredPerm: "viewCertificates" },
+  { label: "Reports & Export", href: "/admin/reports", icon: FileSpreadsheet, requiredPerm: "viewReports" },
+  { label: "Audit Reports", href: "/admin/audit-logs", icon: ShieldAlert, requiredPerm: "viewAuditReports" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -40,6 +50,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{
+    id: string;
+    identifier: string;
+    role: "admin" | "trainer" | "student";
+    name?: string;
+    permissions?: Record<string, boolean>;
+  } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated && data.user) {
+          setCurrentUser(data.user);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -47,10 +75,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       await fetch("/api/auth/logout", { method: "POST" });
       router.push("/login");
       router.refresh();
-    } catch (err) {
+    } catch {
       router.push("/login");
     }
   };
+
+  const visibleNavItems = navItems.filter((item) => {
+    if (!currentUser) return true; // optimistic while fetching
+    if (currentUser.role === "admin") return true;
+    if (item.adminOnly) return false;
+    if (!item.requiredPerm) return true;
+    return !!currentUser.permissions?.[item.requiredPerm];
+  });
 
   return (
     <div className="min-h-screen flex bg-[#F8FAFC] text-slate-800 antialiased">
@@ -85,11 +121,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="font-bold text-base text-slate-900 tracking-tight">QPET</span>
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60">
-                    PORTAL
+                  <span
+                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${
+                      currentUser?.role === "trainer"
+                        ? "bg-purple-50 text-purple-700 border-purple-200/60"
+                        : "bg-blue-50 text-blue-700 border-blue-200/60"
+                    }`}
+                  >
+                    {currentUser?.role === "trainer" ? "FACULTY" : "PORTAL"}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 font-medium">Education Admin</p>
+                <p className="text-[11px] text-slate-400 font-medium">
+                  {currentUser?.role === "trainer" ? "Trainer Portal" : "Education Admin"}
+                </p>
               </div>
             </Link>
             <button
@@ -105,7 +149,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
               Management
             </p>
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const active = pathname === item.href;
               const Icon = item.icon;
               return (
@@ -150,12 +194,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-4 border-t border-slate-100 bg-slate-50/60">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0">
-                A
+              <div
+                className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                  currentUser?.role === "trainer"
+                    ? "bg-purple-100 text-purple-700"
+                    : "bg-blue-100 text-blue-700"
+                }`}
+              >
+                {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : "A"}
               </div>
               <div className="truncate">
-                <p className="text-xs font-semibold text-slate-900 truncate">Administrator</p>
-                <p className="text-[11px] text-slate-500 truncate">admin@qpet.org</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-semibold text-slate-900 truncate">
+                    {currentUser?.name || (currentUser?.role === "trainer" ? "Trainer" : "Administrator")}
+                  </p>
+                  <span
+                    className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${
+                      currentUser?.role === "trainer"
+                        ? "bg-purple-50 text-purple-700 border border-purple-200"
+                        : "bg-blue-50 text-blue-700 border border-blue-200"
+                    }`}
+                  >
+                    {currentUser?.role === "trainer" ? "TRAINER" : "ADMIN"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 truncate font-mono">
+                  {currentUser?.identifier || "admin077@qpet.in"}
+                </p>
               </div>
             </div>
             <button
@@ -184,7 +249,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="text-xs font-medium text-slate-500 hidden sm:flex items-center gap-2">
               <span className="text-slate-800 font-semibold">QPET LMS</span>
               <span>/</span>
-              <span>Administrative Operations</span>
+              <span>
+                {currentUser?.role === "trainer" ? "Trainer Faculty Portal" : "Administrative Operations"}
+              </span>
             </div>
           </div>
 

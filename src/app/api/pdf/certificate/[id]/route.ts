@@ -25,6 +25,20 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden: Cannot access this certificate." }, { status: 403 });
     }
 
+    // Role check: Trainer must have viewCertificates or generateCertificates permission
+    if (session.role === "trainer") {
+      const canAccess =
+        session.permissions?.viewCertificates ||
+        session.permissions?.generateCertificates ||
+        session.permissions?.editCertificates;
+      if (!canAccess) {
+        return NextResponse.json(
+          { error: "Forbidden: You do not have permission to view or download certificates." },
+          { status: 403 }
+        );
+      }
+    }
+
     // Check revocation
     if (cert.status === "revoked") {
       return NextResponse.json(

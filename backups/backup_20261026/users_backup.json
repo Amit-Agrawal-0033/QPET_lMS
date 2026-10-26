@@ -1,0 +1,54 @@
+[
+  {
+    "_id": "6ad898b1aec620356c657f00",
+    "identifier": "admin@qpet.org",
+    "email": "admin@qpet.org",
+    "passwordHash": "$2a$10$eomMx/zBz/D4g49YGWhX8umjxvH98Orcc6Mt6m9b78Th1DdxCC68y",
+    "role": "admin",
+    "status": "active",
+    "createdAt": "2026-10-21T10:49:21.582Z",
+    "updatedAt": "2026-10-22T11:55:22.810Z",
+    "__v": 0,
+    "lastLogin": "2026-10-22T11:55:22.795Z"
+  },
+  {
+    "_id": "6ad8991d511ce1426211a586",
+    "identifier": "7347861212",
+    "mobileNumber": "7347861212",
+    "email": "rahul.sharma@example.com",
+    "passwordHash": "$2a$10$Ix/NBR3Si6VCUEpYWMH16uR2U5YiEmWNsqTdZ0dGG5J3ujuwkZnP.",
+    "role": "student",
+    "status": "active",
+    "studentProfileId": "6ad8991d511ce1426211a583",
+    "createdAt": "2026-10-21T10:51:09.163Z",
+    "__v": 0,
+    "lastLogin": "2026-10-21T12:30:49.993Z",
+    "updatedAt": "2026-10-21T12:30:49.997Z"
+  },
+  {
+    "_id": "6ad899d480820f52ba703133",
+    "identifier": "7347860033",
+    "email": "ithelpdesk@qgroup.co.in",
+    "mobileNumber": "7347860033",
+    "passwordHash": "$2a$10$p8NrpOjHQ8qZRe0bx1SoCO3BGA5C/8BpSZxZgcszOKTdlm0R4Lo.S",
+    "role": "student",
+    "status": "active",
+    "studentProfileId": "6ad899d380820f52ba703131",
+    "createdAt": "2026-10-21T10:54:12.033Z",
+    "updatedAt": "2026-10-21T10:54:12.033Z",
+    "__v": 0
+  },
+  {
+    "_id": "6ad9f9dc80820f52ba703556",
+    "identifier": "073478600777777",
+    "email": "amithrqcbcbcvgroup@gmail.com",
+    "mobileNumber": "073478600777777",
+    "passwordHash": "$2a$10$LsQrnIUa2GMbMkEhbvNPL.ghtdgTzkI0fq4aARFO/JRxwt2WGWhD6",
+    "role": "student",
+    "status": "active",
+    "studentProfileId": "6ad9f9db80820f52ba703554",
+    "createdAt": "2026-10-22T11:56:12.022Z",
+    "updatedAt": "2026-10-22T11:56:12.022Z",
+    "__v": 0
+  }
+]
