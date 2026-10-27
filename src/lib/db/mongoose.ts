@@ -40,7 +40,7 @@ export async function connectDB(): Promise<typeof mongoose> {
     const primaryOpts = {
       bufferCommands: false,
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 4000,
+      serverSelectionTimeoutMS: 10000,
     };
 
     cached.promise = (async () => {
