@@ -170,23 +170,41 @@ export default function TrainerDashboardPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
-            {perms.viewStudents !== false && (
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            {perms.editStudents && (
               <Link
                 href="/trainer/students"
-                className="px-4 py-2.5 rounded-xl bg-white text-purple-900 hover:bg-purple-50 font-bold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                className="px-3.5 py-2 rounded-xl bg-white text-purple-900 hover:bg-purple-50 font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <Users className="w-4 h-4 text-purple-700" />
-                <span>View Students</span>
+                <span>+ Add Student</span>
               </Link>
             )}
-            {perms.viewCourses !== false && (
+            {perms.viewRegistrations && (
+              <Link
+                href="/trainer/registrations"
+                className="px-3.5 py-2 rounded-xl bg-purple-900/60 hover:bg-purple-900/80 border border-purple-400/40 text-white font-bold text-xs backdrop-blur-md transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <FileCheck2 className="w-4 h-4 text-purple-200" />
+                <span>Admissions</span>
+              </Link>
+            )}
+            {perms.editCourses && (
               <Link
                 href="/trainer/courses"
-                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold text-xs backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer"
+                className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold text-xs backdrop-blur-md transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <BookOpen className="w-4 h-4" />
-                <span>Curriculum</span>
+                <span>+ Course</span>
+              </Link>
+            )}
+            {(perms.generateCertificates || perms.editCertificates) && (
+              <Link
+                href="/trainer/certificates"
+                className="px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-100 font-bold text-xs backdrop-blur-md transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Award className="w-4 h-4 text-emerald-300" />
+                <span>Issue Certificate</span>
               </Link>
             )}
           </div>
@@ -317,21 +335,27 @@ export default function TrainerDashboardPage() {
                 </span>
               </div>
               <div className="flex items-center justify-between text-slate-700">
-                <span>Student Directory:</span>
-                <span className={`font-semibold ${perms.viewStudents !== false ? "text-emerald-600" : "text-slate-400"}`}>
-                  {perms.viewStudents !== false ? "✓ Granted" : "✕ Restricted"}
+                <span>Students Management:</span>
+                <span className={`font-semibold ${perms.editStudents ? "text-purple-700" : perms.viewStudents !== false ? "text-emerald-600" : "text-slate-400"}`}>
+                  {perms.editStudents ? "✓ Add & Edit" : perms.viewStudents !== false ? "✓ View Only" : "✕ Restricted"}
                 </span>
               </div>
               <div className="flex items-center justify-between text-slate-700">
                 <span>Course Curriculum:</span>
-                <span className={`font-semibold ${perms.viewCourses !== false ? "text-emerald-600" : "text-slate-400"}`}>
-                  {perms.viewCourses !== false ? "✓ Granted" : "✕ Restricted"}
+                <span className={`font-semibold ${perms.editCourses ? "text-purple-700" : perms.viewCourses !== false ? "text-emerald-600" : "text-slate-400"}`}>
+                  {perms.editCourses ? "✓ Create & Edit" : perms.viewCourses !== false ? "✓ View Only" : "✕ Restricted"}
                 </span>
               </div>
               <div className="flex items-center justify-between text-slate-700">
                 <span>Certificates:</span>
-                <span className={`font-semibold ${perms.viewCertificates ? "text-emerald-600" : "text-slate-400"}`}>
-                  {perms.viewCertificates ? "✓ Granted" : "✕ Restricted"}
+                <span className={`font-semibold ${(perms.generateCertificates || perms.editCertificates) ? "text-purple-700" : perms.viewCertificates ? "text-emerald-600" : "text-slate-400"}`}>
+                  {(perms.generateCertificates || perms.editCertificates) ? "✓ Issue & Verify" : perms.viewCertificates ? "✓ View Only" : "✕ Restricted"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-slate-700">
+                <span>New Admissions:</span>
+                <span className={`font-semibold ${perms.editRegistrations ? "text-purple-700" : perms.viewRegistrations ? "text-emerald-600" : "text-slate-400"}`}>
+                  {perms.editRegistrations ? "✓ Approve & Reject" : perms.viewRegistrations ? "✓ View Only" : "✕ Restricted"}
                 </span>
               </div>
               <div className="flex items-center justify-between text-slate-700">

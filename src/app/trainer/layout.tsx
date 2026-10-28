@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   ShieldAlert,
   ExternalLink,
+  FileCheck2,
 } from "lucide-react";
 
 interface NavItem {
@@ -27,6 +28,7 @@ interface NavItem {
 
 const trainerNav: NavItem[] = [
   { label: "Faculty Dashboard", href: "/trainer/dashboard", icon: LayoutDashboard },
+  { label: "New Admissions", href: "/trainer/registrations", icon: FileCheck2, requiredPerm: "viewRegistrations" },
   { label: "My Students", href: "/trainer/students", icon: Users, requiredPerm: "viewStudents" },
   { label: "Course Curriculum", href: "/trainer/courses", icon: BookOpen, requiredPerm: "viewCourses" },
   { label: "Certificates", href: "/trainer/certificates", icon: Award, requiredPerm: "viewCertificates" },
