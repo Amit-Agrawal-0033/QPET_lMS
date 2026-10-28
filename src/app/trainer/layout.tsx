@@ -21,13 +21,14 @@ interface NavItem {
   label: string;
   href: string;
   icon: any;
+  requiredPerm?: string;
 }
 
 const trainerNav: NavItem[] = [
   { label: "Faculty Dashboard", href: "/trainer/dashboard", icon: LayoutDashboard },
-  { label: "My Students", href: "/trainer/students", icon: Users },
-  { label: "Course Curriculum", href: "/trainer/courses", icon: BookOpen },
-  { label: "Certificates", href: "/trainer/certificates", icon: Award },
+  { label: "My Students", href: "/trainer/students", icon: Users, requiredPerm: "viewStudents" },
+  { label: "Course Curriculum", href: "/trainer/courses", icon: BookOpen, requiredPerm: "viewCourses" },
+  { label: "Certificates", href: "/trainer/certificates", icon: Award, requiredPerm: "viewCertificates" },
 ];
 
 export default function TrainerLayout({ children }: { children: React.ReactNode }) {
@@ -40,6 +41,7 @@ export default function TrainerLayout({ children }: { children: React.ReactNode 
     identifier: string;
     role: "admin" | "trainer" | "student";
     name?: string;
+    permissions?: Record<string, boolean>;
   } | null>(null);
 
   useEffect(() => {
@@ -121,13 +123,20 @@ export default function TrainerLayout({ children }: { children: React.ReactNode 
             <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
               Faculty Academic Tools
             </p>
-            {trainerNav.map((item) => {
-              const active = pathname === item.href || (item.href !== "/trainer/dashboard" && pathname.startsWith(item.href));
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
+            {trainerNav
+              .filter((item) => {
+                if (!currentUser) return true;
+                if (currentUser.role === "admin") return true;
+                if (!item.requiredPerm) return true;
+                return !!currentUser.permissions?.[item.requiredPerm];
+              })
+              .map((item) => {
+                const active = pathname === item.href || (item.href !== "/trainer/dashboard" && pathname.startsWith(item.href));
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
                   onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                     active

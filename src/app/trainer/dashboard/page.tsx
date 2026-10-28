@@ -79,18 +79,23 @@ export default function TrainerDashboardPage() {
   }
 
   const { trainer, stats, recentEnrollments } = data;
+  const perms = trainer.permissions || {};
 
   const kpis = [
-    {
-      label: "Active Students",
-      value: stats.totalStudents,
-      subtext: "Enrolled in Training",
-      icon: Users,
-      color: "text-purple-600",
-      bg: "bg-purple-50",
-      border: "border-purple-200/60",
-      link: "/trainer/students",
-    },
+    ...(perms.viewStudents !== false
+      ? [
+          {
+            label: "Active Students",
+            value: stats.totalStudents,
+            subtext: "Enrolled in Training",
+            icon: Users,
+            color: "text-purple-600",
+            bg: "bg-purple-50",
+            border: "border-purple-200/60",
+            link: "/trainer/students",
+          },
+        ]
+      : []),
     {
       label: "Active Enrollments",
       value: stats.activeEnrollments,
@@ -99,28 +104,36 @@ export default function TrainerDashboardPage() {
       color: "text-blue-600",
       bg: "bg-blue-50",
       border: "border-blue-200/60",
-      link: "/trainer/students",
+      link: perms.viewStudents !== false ? "/trainer/students" : "/trainer/dashboard",
     },
-    {
-      label: "Courses in Syllabus",
-      value: stats.totalCourses,
-      subtext: "Active Training Modules",
-      icon: BookOpen,
-      color: "text-indigo-600",
-      bg: "bg-indigo-50",
-      border: "border-indigo-200/60",
-      link: "/trainer/courses",
-    },
-    {
-      label: "Certificates Awarded",
-      value: stats.certificatesIssued,
-      subtext: "Successfully Graduated",
-      icon: Award,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50",
-      border: "border-emerald-200/60",
-      link: "/trainer/certificates",
-    },
+    ...(perms.viewCourses !== false
+      ? [
+          {
+            label: "Courses in Syllabus",
+            value: stats.totalCourses,
+            subtext: "Active Training Modules",
+            icon: BookOpen,
+            color: "text-indigo-600",
+            bg: "bg-indigo-50",
+            border: "border-indigo-200/60",
+            link: "/trainer/courses",
+          },
+        ]
+      : []),
+    ...(perms.viewCertificates
+      ? [
+          {
+            label: "Certificates Awarded",
+            value: stats.certificatesIssued,
+            subtext: "Successfully Graduated",
+            icon: Award,
+            color: "text-emerald-600",
+            bg: "bg-emerald-50",
+            border: "border-emerald-200/60",
+            link: "/trainer/certificates",
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -143,20 +156,24 @@ export default function TrainerDashboardPage() {
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            <Link
-              href="/trainer/students"
-              className="px-4 py-2.5 rounded-xl bg-white text-purple-900 hover:bg-purple-50 font-bold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <Users className="w-4 h-4 text-purple-700" />
-              <span>View Students</span>
-            </Link>
-            <Link
-              href="/trainer/courses"
-              className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold text-xs backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <BookOpen className="w-4 h-4" />
-              <span>Curriculum</span>
-            </Link>
+            {perms.viewStudents !== false && (
+              <Link
+                href="/trainer/students"
+                className="px-4 py-2.5 rounded-xl bg-white text-purple-900 hover:bg-purple-50 font-bold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Users className="w-4 h-4 text-purple-700" />
+                <span>View Students</span>
+              </Link>
+            )}
+            {perms.viewCourses !== false && (
+              <Link
+                href="/trainer/courses"
+                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold text-xs backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <BookOpen className="w-4 h-4" />
+                <span>Curriculum</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -285,12 +302,26 @@ export default function TrainerDashboardPage() {
                 </span>
               </div>
               <div className="flex items-center justify-between text-slate-700">
-                <span>Portal Scope:</span>
-                <span className="font-semibold text-purple-700">Academic & Training</span>
+                <span>Student Directory:</span>
+                <span className={`font-semibold ${perms.viewStudents !== false ? "text-emerald-600" : "text-slate-400"}`}>
+                  {perms.viewStudents !== false ? "✓ Granted" : "✕ Restricted"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-slate-700">
+                <span>Course Curriculum:</span>
+                <span className={`font-semibold ${perms.viewCourses !== false ? "text-emerald-600" : "text-slate-400"}`}>
+                  {perms.viewCourses !== false ? "✓ Granted" : "✕ Restricted"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-slate-700">
+                <span>Certificates:</span>
+                <span className={`font-semibold ${perms.viewCertificates ? "text-emerald-600" : "text-slate-400"}`}>
+                  {perms.viewCertificates ? "✓ Granted" : "✕ Restricted"}
+                </span>
               </div>
               <div className="flex items-center justify-between text-slate-700">
                 <span>Financial Ledger:</span>
-                <span className="font-bold text-slate-400">Restricted (Admin Only)</span>
+                <span className="font-bold text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded">Restricted (Admin Only)</span>
               </div>
             </div>
           </div>
