@@ -6,6 +6,7 @@ import { Enrollment } from "@/lib/models/Enrollment";
 import { Payment } from "@/lib/models/Payment";
 import { Installment } from "@/lib/models/Installment";
 import { Certificate } from "@/lib/models/Certificate";
+import { Course } from "@/lib/models/Course";
 
 export async function GET() {
   const { response } = await requireAdmin();
@@ -13,6 +14,8 @@ export async function GET() {
 
   try {
     await connectDB();
+    // Guarantee Course schema is loaded for populate('preferredCourseId')
+    const _ = Course.modelName;
 
     const [
       totalStudents,

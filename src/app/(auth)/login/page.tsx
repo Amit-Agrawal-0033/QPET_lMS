@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -30,6 +30,34 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+
+  useEffect(() => {
+    const callbackUrl = searchParams.get("callbackUrl") || "";
+    const portal = searchParams.get("portal") || searchParams.get("role") || "";
+    if (callbackUrl.startsWith("/admin") || portal === "admin") {
+      setRole("admin");
+      setStaffRole("admin");
+    } else if (callbackUrl.startsWith("/trainer") || portal === "trainer") {
+      setRole("admin");
+      setStaffRole("trainer");
+    }
+
+    // Auto-redirect if user already has an active session
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated && data.user) {
+          if (data.user.role === "admin") {
+            router.push("/admin/dashboard");
+          } else if (data.user.role === "trainer") {
+            router.push("/trainer/dashboard");
+          } else if (data.user.role === "student") {
+            router.push("/student/dashboard");
+          }
+        }
+      })
+      .catch(() => {});
+  }, [searchParams, router]);
 
   const handleSubmit = async (e: React.FormEvent, activeRole: "student" | "admin" | "trainer") => {
     e.preventDefault();

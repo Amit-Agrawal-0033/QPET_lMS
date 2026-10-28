@@ -46,10 +46,13 @@ export async function POST(req: NextRequest) {
           );
         }
       } else if (user.role !== role) {
-        return NextResponse.json(
-          { error: `Account exists, but is not authorized for the ${role} portal.` },
-          { status: 403 }
-        );
+        // Allow administrator account to authenticate from any tab and redirect to admin dashboard
+        if (user.role !== "admin") {
+          return NextResponse.json(
+            { error: `Account exists, but is not authorized for the ${role} portal.` },
+            { status: 403 }
+          );
+        }
       }
     }
 

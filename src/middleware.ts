@@ -36,6 +36,11 @@ export async function middleware(request: NextRequest) {
       if (role !== "admin") {
         return NextResponse.redirect(new URL("/login?error=admin_required", request.url));
       }
+
+      // Direct /admin or /admin/ to /admin/dashboard
+      if (pathname === "/admin" || pathname === "/admin/") {
+        return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+      }
     } catch {
       return NextResponse.redirect(new URL("/login?error=invalid_session", request.url));
     }
@@ -62,6 +67,11 @@ export async function middleware(request: NextRequest) {
       // Only trainer and admin can access trainer portal
       if (role !== "trainer" && role !== "admin") {
         return NextResponse.redirect(new URL("/login?error=trainer_required", request.url));
+      }
+
+      // Direct /trainer or /trainer/ to /trainer/dashboard
+      if (pathname === "/trainer" || pathname === "/trainer/") {
+        return NextResponse.redirect(new URL("/trainer/dashboard", request.url));
       }
     } catch {
       return NextResponse.redirect(new URL("/login?error=invalid_session", request.url));
@@ -93,6 +103,11 @@ export async function middleware(request: NextRequest) {
 
       if (role !== "student") {
         return NextResponse.redirect(new URL("/login?error=student_required", request.url));
+      }
+
+      // Direct /student or /student/ to /student/dashboard
+      if (pathname === "/student" || pathname === "/student/") {
+        return NextResponse.redirect(new URL("/student/dashboard", request.url));
       }
     } catch {
       return NextResponse.redirect(new URL("/login?error=invalid_session", request.url));
