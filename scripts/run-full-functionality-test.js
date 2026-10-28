@@ -63,9 +63,14 @@ class HttpClient {
 
     for (const cookieStr of setCookieHeaders) {
       if (!cookieStr) continue;
-      const parts = cookieStr.split(";")[0].split("=");
-      if (parts.length === 2) {
-        this.cookies[parts[0].trim()] = parts[1].trim();
+      const firstPart = cookieStr.split(";")[0];
+      const eqIdx = firstPart.indexOf("=");
+      if (eqIdx !== -1) {
+        const key = firstPart.slice(0, eqIdx).trim();
+        const val = firstPart.slice(eqIdx + 1).trim();
+        if (val) {
+          this.cookies[key] = val;
+        }
       }
     }
   }
