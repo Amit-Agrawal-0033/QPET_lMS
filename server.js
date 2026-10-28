@@ -5,7 +5,7 @@ const path = require("path");
 
 const dev = false;
 const hostname = "0.0.0.0";
-const port = parseInt(process.env.PORT, 10) || 3000;
+const port = parseInt(process.env.PORT, 10) || 3005;
 const app = next({ dev, dir: __dirname, hostname, port });
 const handle = app.getRequestHandler();
 
