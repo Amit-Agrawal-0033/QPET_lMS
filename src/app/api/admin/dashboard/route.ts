@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdminOrTrainer } from "@/lib/auth/guards";
+import { requireAdmin } from "@/lib/auth/guards";
 import { connectDB } from "@/lib/db/mongoose";
 import { StudentProfile } from "@/lib/models/StudentProfile";
 import { Enrollment } from "@/lib/models/Enrollment";
@@ -8,7 +8,7 @@ import { Installment } from "@/lib/models/Installment";
 import { Certificate } from "@/lib/models/Certificate";
 
 export async function GET() {
-  const { response } = await requireAdminOrTrainer();
+  const { response } = await requireAdmin();
   if (response) return response;
 
   try {

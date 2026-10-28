@@ -60,9 +60,11 @@ function LoginForm() {
         return;
       }
 
-      // Success redirect
-      if (data.user.role === "admin" || data.user.role === "trainer") {
+      // Success redirect strictly by role
+      if (data.user.role === "admin") {
         router.push("/admin/dashboard");
+      } else if (data.user.role === "trainer") {
+        router.push("/trainer/dashboard");
       } else {
         router.push("/student/dashboard");
       }

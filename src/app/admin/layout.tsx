@@ -63,11 +63,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       .then((res) => res.json())
       .then((data) => {
         if (data.authenticated && data.user) {
+          if (data.user.role === "trainer") {
+            router.push("/trainer/dashboard");
+            return;
+          }
+          if (data.user.role === "student") {
+            router.push("/student/dashboard");
+            return;
+          }
           setCurrentUser(data.user);
         }
       })
       .catch(() => {});
-  }, []);
+  }, [router]);
 
   const handleLogout = async () => {
     setLoggingOut(true);

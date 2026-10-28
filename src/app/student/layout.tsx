@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -31,6 +31,24 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated && data.user) {
+          if (data.user.role === "admin") {
+            router.push("/admin/dashboard");
+            return;
+          }
+          if (data.user.role === "trainer") {
+            router.push("/trainer/dashboard");
+            return;
+          }
+        }
+      })
+      .catch(() => {});
+  }, [router]);
 
   const handleLogout = async () => {
     setLoggingOut(true);

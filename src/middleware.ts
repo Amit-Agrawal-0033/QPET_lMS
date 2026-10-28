@@ -6,23 +6,10 @@ const JWT_SECRET = process.env.JWT_SECRET || "qpet_fallback_default_secret_key_3
 const SECRET_KEY = new TextEncoder().encode(JWT_SECRET);
 const COOKIE_NAME = "qpet_session";
 
-// Map admin dashboard paths to required trainer permissions
-const PATH_PERMISSION_MAP: Record<string, string> = {
-  "/admin/students": "viewStudents",
-  "/admin/registrations": "viewRegistrations",
-  "/admin/courses": "viewCourses",
-  "/admin/enrollments": "viewEnrollments",
-  "/admin/fees": "viewFees",
-  "/admin/receipts": "viewReceipts",
-  "/admin/certificates": "viewCertificates",
-  "/admin/reports": "viewReports",
-  "/admin/audit-logs": "viewAuditReports",
-};
-
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Protect admin & staff routes
+  // 1. ADMIN ROUTES (/admin/*) - STRICTLY ADMIN ONLY
   if (pathname.startsWith("/admin")) {
     const token = request.cookies.get(COOKIE_NAME)?.value;
     if (!token) {
@@ -34,37 +21,54 @@ export async function middleware(request: NextRequest) {
     try {
       const { payload } = await jwtVerify(token, SECRET_KEY);
       const role = payload.role as string;
-      const permissions = (payload.permissions as Record<string, boolean>) || {};
 
-      // Only admin and trainer can enter /admin
-      if (role !== "admin" && role !== "trainer") {
-        return NextResponse.redirect(new URL("/login?error=staff_required", request.url));
+      // If user is a trainer, strictly redirect to trainer dashboard
+      if (role === "trainer") {
+        return NextResponse.redirect(new URL("/trainer/dashboard", request.url));
       }
 
-      // If user is a trainer, enforce module-level permissions
-      if (role === "trainer") {
-        // Trainer management is strictly Admin-only
-        if (pathname.startsWith("/admin/trainers")) {
-          return NextResponse.redirect(new URL("/admin/dashboard?error=admin_only", request.url));
-        }
+      // If user is a student, redirect to student dashboard
+      if (role === "student") {
+        return NextResponse.redirect(new URL("/student/dashboard", request.url));
+      }
 
-        // Check path permission map
-        for (const [routePrefix, requiredPerm] of Object.entries(PATH_PERMISSION_MAP)) {
-          if (pathname.startsWith(routePrefix)) {
-            if (!permissions[requiredPerm]) {
-              return NextResponse.redirect(
-                new URL("/admin/dashboard?error=permission_denied", request.url)
-              );
-            }
-          }
-        }
+      // Only admin can access /admin
+      if (role !== "admin") {
+        return NextResponse.redirect(new URL("/login?error=admin_required", request.url));
       }
     } catch {
       return NextResponse.redirect(new URL("/login?error=invalid_session", request.url));
     }
   }
 
-  // Protect student routes
+  // 2. TRAINER ROUTES (/trainer/*) - TRAINER & ADMIN
+  if (pathname.startsWith("/trainer")) {
+    const token = request.cookies.get(COOKIE_NAME)?.value;
+    if (!token) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("callbackUrl", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    try {
+      const { payload } = await jwtVerify(token, SECRET_KEY);
+      const role = payload.role as string;
+
+      // If student, redirect to student dashboard
+      if (role === "student") {
+        return NextResponse.redirect(new URL("/student/dashboard", request.url));
+      }
+
+      // Only trainer and admin can access trainer portal
+      if (role !== "trainer" && role !== "admin") {
+        return NextResponse.redirect(new URL("/login?error=trainer_required", request.url));
+      }
+    } catch {
+      return NextResponse.redirect(new URL("/login?error=invalid_session", request.url));
+    }
+  }
+
+  // 3. STUDENT ROUTES (/student/*) - STUDENT ONLY
   if (pathname.startsWith("/student")) {
     const token = request.cookies.get(COOKIE_NAME)?.value;
     if (!token) {
@@ -75,7 +79,19 @@ export async function middleware(request: NextRequest) {
 
     try {
       const { payload } = await jwtVerify(token, SECRET_KEY);
-      if (payload.role !== "student") {
+      const role = payload.role as string;
+
+      // If admin, redirect to admin dashboard
+      if (role === "admin") {
+        return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+      }
+
+      // If trainer, redirect to trainer dashboard
+      if (role === "trainer") {
+        return NextResponse.redirect(new URL("/trainer/dashboard", request.url));
+      }
+
+      if (role !== "student") {
         return NextResponse.redirect(new URL("/login?error=student_required", request.url));
       }
     } catch {
@@ -87,5 +103,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/student/:path*"],
+  matcher: ["/admin/:path*", "/trainer/:path*", "/student/:path*"],
 };
