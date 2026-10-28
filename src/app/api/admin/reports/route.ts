@@ -89,9 +89,9 @@ export async function GET(req: NextRequest) {
         e.totalFee,
         e.paidAmount,
         e.outstandingBalance,
-        e.paymentStatus.toUpperCase(),
-        e.enrollmentStatus.toUpperCase(),
-        e.certificateStatus.toUpperCase(),
+        e.paymentStatus?.toUpperCase() || "N/A",
+        e.enrollmentStatus?.toUpperCase() || "ACTIVE",
+        e.certificateStatus?.toUpperCase() || "N/A",
       ]);
     } else if (type === "payments") {
       headers = [
@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
         new Date(p.paymentDate).toLocaleDateString("en-IN"),
         p.enrollmentId?.enrollmentNumber || "N/A",
         p.studentId?.fullName || "N/A",
-        p.paymentMethod.toUpperCase(),
+        p.paymentMethod?.toUpperCase() || "N/A",
         p.amount,
         p.transactionReference || "N/A",
         p.recordedByAdminName,
@@ -148,7 +148,7 @@ export async function GET(req: NextRequest) {
         e.totalFee,
         e.paidAmount,
         e.outstandingBalance,
-        e.paymentStatus.toUpperCase(),
+        e.paymentStatus?.toUpperCase() || "N/A",
       ]);
     } else if (type === "installments") {
       headers = [
@@ -173,7 +173,7 @@ export async function GET(req: NextRequest) {
         i.installmentNumber,
         i.amount,
         new Date(i.dueDate).toLocaleDateString("en-IN"),
-        i.status.toUpperCase(),
+        i.status?.toUpperCase() || "PENDING",
         i.paidDate ? new Date(i.paidDate).toLocaleDateString("en-IN") : "Pending",
       ]);
     } else if (type === "certificates") {
@@ -196,11 +196,11 @@ export async function GET(req: NextRequest) {
         c.courseName,
         c.courseDuration,
         new Date(c.issueDate).toLocaleDateString("en-IN"),
-        c.status.toUpperCase(),
+        c.status?.toUpperCase() || "ISSUED",
         c.issuedByAdminName,
         c.revocationReason || "N/A",
       ]);
-    } else if (type === "course_fees") {
+    } else if (type === "course_fees" || type === "courses") {
       headers = [
         "Course Title",
         "Course Code",

@@ -38,10 +38,12 @@ export async function GET(req: NextRequest) {
       .sort({ updatedAt: -1 })
       .lean();
 
+    const validEligible = eligibleEnrollments.filter((e: any) => e.studentId && e.studentId.fullName);
+
     return NextResponse.json({
       success: true,
       certificates,
-      eligibleEnrollments,
+      eligibleEnrollments: validEligible,
     });
   } catch (error: any) {
     return NextResponse.json(

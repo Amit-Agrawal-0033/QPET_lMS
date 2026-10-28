@@ -1,19 +1,31 @@
 import { connectDB } from "../db/mongoose";
 import { EnrollmentCounter } from "../models/EnrollmentCounter";
+import { Certificate } from "../models/Certificate";
+import { Enrollment } from "../models/Enrollment";
+import { FeeReceipt } from "../models/FeeReceipt";
 
 /**
  * Generates an atomic, concurrency-safe enrollment number.
  * Format: QPET-YYYY-NNNNN (e.g. QPET-2026-00001)
- *
- * Rules:
- * - Uses current calendar year.
- * - Starts at 00001 for each year.
- * - Atomically increments counter using MongoDB findOneAndUpdate with $inc.
- * - Guarantees uniqueness even under concurrent requests.
  */
 export async function generateEnrollmentNumber(targetYear?: number): Promise<string> {
   await connectDB();
   const year = targetYear || new Date().getFullYear();
+
+  // Find highest existing enrollment sequence for this year to prevent collision
+  const prefix = `QPET-${year}-`;
+  const latest = await Enrollment.findOne(
+    { enrollmentNumber: { $regex: `^${prefix}` } },
+    { enrollmentNumber: 1 },
+    { sort: { enrollmentNumber: -1 } }
+  ).lean();
+
+  let maxExistingSeq = 0;
+  if (latest && latest.enrollmentNumber) {
+    const parts = latest.enrollmentNumber.split("-");
+    const num = parseInt(parts[parts.length - 1], 10);
+    if (!isNaN(num)) maxExistingSeq = num;
+  }
 
   const counter = await EnrollmentCounter.findOneAndUpdate(
     { year },
@@ -21,7 +33,16 @@ export async function generateEnrollmentNumber(targetYear?: number): Promise<str
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
-  const sequence = counter.lastSequence;
+  let sequence = counter?.lastSequence || 1;
+  if (sequence <= maxExistingSeq) {
+    const updated = await EnrollmentCounter.findOneAndUpdate(
+      { year },
+      { $set: { lastSequence: maxExistingSeq + 1 } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    sequence = updated?.lastSequence || (maxExistingSeq + 1);
+  }
+
   const paddedSequence = String(sequence).padStart(5, "0");
   return `QPET-${year}-${paddedSequence}`;
 }
@@ -33,10 +54,21 @@ export async function generateEnrollmentNumber(targetYear?: number): Promise<str
 export async function generateReceiptNumber(targetYear?: number): Promise<string> {
   await connectDB();
   const year = targetYear || new Date().getFullYear();
+  const receiptYearKey = -(year * 10 + 1);
 
-  // We can use a dedicated counter or distinguish by year offset or counter name
-  // To avoid collisions, we use a separate year key for receipts
-  const receiptYearKey = -(year * 10 + 1); // Negative key ensures isolated sequence in same collection
+  const prefix = `QPET-REC-${year}-`;
+  const latest = await FeeReceipt.findOne(
+    { receiptNumber: { $regex: `^${prefix}` } },
+    { receiptNumber: 1 },
+    { sort: { receiptNumber: -1 } }
+  ).lean();
+
+  let maxExistingSeq = 0;
+  if (latest && latest.receiptNumber) {
+    const parts = latest.receiptNumber.split("-");
+    const num = parseInt(parts[parts.length - 1], 10);
+    if (!isNaN(num)) maxExistingSeq = num;
+  }
 
   const counter = await EnrollmentCounter.findOneAndUpdate(
     { year: receiptYearKey },
@@ -44,7 +76,16 @@ export async function generateReceiptNumber(targetYear?: number): Promise<string
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
-  const sequence = counter.lastSequence;
+  let sequence = counter?.lastSequence || 1;
+  if (sequence <= maxExistingSeq) {
+    const updated = await EnrollmentCounter.findOneAndUpdate(
+      { year: receiptYearKey },
+      { $set: { lastSequence: maxExistingSeq + 1 } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    sequence = updated?.lastSequence || (maxExistingSeq + 1);
+  }
+
   const paddedSequence = String(sequence).padStart(5, "0");
   return `QPET-REC-${year}-${paddedSequence}`;
 }
@@ -56,7 +97,21 @@ export async function generateReceiptNumber(targetYear?: number): Promise<string
 export async function generateCertificateNumber(targetYear?: number): Promise<string> {
   await connectDB();
   const year = targetYear || new Date().getFullYear();
-  const certYearKey = -(year * 10 + 2); // Negative key ensures isolated sequence
+  const certYearKey = -(year * 10 + 2);
+
+  const prefix = `QPET-CERT-${year}-`;
+  const latest = await Certificate.findOne(
+    { certificateNumber: { $regex: `^${prefix}` } },
+    { certificateNumber: 1 },
+    { sort: { certificateNumber: -1 } }
+  ).lean();
+
+  let maxExistingSeq = 0;
+  if (latest && latest.certificateNumber) {
+    const parts = latest.certificateNumber.split("-");
+    const num = parseInt(parts[parts.length - 1], 10);
+    if (!isNaN(num)) maxExistingSeq = num;
+  }
 
   const counter = await EnrollmentCounter.findOneAndUpdate(
     { year: certYearKey },
@@ -64,7 +119,16 @@ export async function generateCertificateNumber(targetYear?: number): Promise<st
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
-  const sequence = counter.lastSequence;
+  let sequence = counter?.lastSequence || 1;
+  if (sequence <= maxExistingSeq) {
+    const updated = await EnrollmentCounter.findOneAndUpdate(
+      { year: certYearKey },
+      { $set: { lastSequence: maxExistingSeq + 1 } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    sequence = updated?.lastSequence || (maxExistingSeq + 1);
+  }
+
   const paddedSequence = String(sequence).padStart(5, "0");
   return `QPET-CERT-${year}-${paddedSequence}`;
 }
