@@ -58,14 +58,21 @@ export async function requireAdminOrTrainer(permissionKey?: string): Promise<
   }
 
   if (session.role === "trainer") {
-    if (permissionKey && !session.permissions?.[permissionKey]) {
+    // Real-time database verification ensures immediate enforcement upon permission revocation
+    const { verifyTrainerPermissionRealtime } = await import("./authorization");
+    const check = await verifyTrainerPermissionRealtime(session.userId, permissionKey);
+
+    if (!check.authorized) {
       return {
         response: NextResponse.json(
-          { error: `Forbidden: You do not have permission (${permissionKey}) to perform this action or view this section.` },
+          { error: check.error || `Forbidden: Missing required permission (${permissionKey}).` },
           { status: 403 }
         ),
       };
     }
+
+    // Attach fresh permissions to session
+    session.permissions = check.permissions || session.permissions;
     return { session };
   }
 

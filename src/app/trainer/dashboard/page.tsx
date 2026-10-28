@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   Clock,
   Search,
+  ShieldAlert,
 } from "lucide-react";
 
 interface TrainerDashboardData {
@@ -131,6 +132,20 @@ export default function TrainerDashboardPage() {
             bg: "bg-emerald-50",
             border: "border-emerald-200/60",
             link: "/trainer/certificates",
+          },
+        ]
+      : []),
+    ...(perms.viewAuditReports
+      ? [
+          {
+            label: "Security Audit Logs",
+            value: "Clearance Granted",
+            subtext: "Immutable System Logs",
+            icon: ShieldAlert,
+            color: "text-amber-600",
+            bg: "bg-amber-50",
+            border: "border-amber-200/60",
+            link: "/trainer/audit-logs",
           },
         ]
       : []),

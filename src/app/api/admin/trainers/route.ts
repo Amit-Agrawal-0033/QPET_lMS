@@ -203,6 +203,11 @@ export async function PATCH(req: NextRequest) {
     if (permissions && typeof permissions === "object") {
       changes.permissions = { from: trainer.permissions, to: permissions };
       trainer.permissions = permissions;
+      trainer.permissionsUpdatedAt = new Date();
+      trainer.permissionsUpdatedBy = session.name || session.identifier;
+      if (body.permissionPreset) {
+        trainer.permissionPreset = body.permissionPreset;
+      }
     }
 
     if (password && password.trim().length >= 6) {
@@ -212,13 +217,17 @@ export async function PATCH(req: NextRequest) {
 
     await trainer.save();
 
-    // Log the audit event
+    // Log the audit event with specific action for permission changes
+    const auditAction = changes.passwordReset
+      ? "TRAINER_PASSWORD_RESET"
+      : changes.permissions
+      ? "TRAINER_PERMISSIONS_UPDATED"
+      : changes.status
+      ? "TRAINER_STATUS_CHANGED"
+      : "TRAINER_UPDATED";
+
     await logAudit({
-      action: changes.passwordReset
-        ? "TRAINER_PASSWORD_RESET"
-        : changes.status
-        ? "TRAINER_STATUS_CHANGED"
-        : "TRAINER_UPDATED",
+      action: auditAction,
       performedBy: session.name || session.identifier,
       performedByRole: "admin",
       targetType: "TRAINER",
@@ -227,6 +236,8 @@ export async function PATCH(req: NextRequest) {
         trainerName: trainer.name,
         identifier: trainer.identifier,
         changes,
+        updatedBy: session.name || session.identifier,
+        updatedAt: new Date(),
       },
       ipAddress: req.headers.get("x-forwarded-for") || "localhost",
     });
@@ -241,6 +252,9 @@ export async function PATCH(req: NextRequest) {
         mobileNumber: trainer.mobileNumber,
         status: trainer.status,
         permissions: trainer.permissions,
+        permissionsUpdatedAt: trainer.permissionsUpdatedAt,
+        permissionsUpdatedBy: trainer.permissionsUpdatedBy,
+        permissionPreset: trainer.permissionPreset,
         updatedAt: trainer.updatedAt,
       },
     });

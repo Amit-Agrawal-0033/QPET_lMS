@@ -96,40 +96,41 @@ export default function StudentDashboardPage() {
   return (
     <div className="space-y-8">
       {/* 1. Header Banner / Student Identity Card */}
-      <div className="relative overflow-hidden bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-sm">
+      <div className="relative overflow-hidden bg-gradient-to-r from-teal-800 via-teal-900 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-teal-950/15 border border-teal-700/40">
+        <div className="absolute right-0 top-0 -mt-12 -mr-12 w-80 h-80 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
             <div className="relative">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-blue-50 border border-blue-200/80 flex items-center justify-center text-blue-600 font-extrabold text-2xl sm:text-3xl shadow-xs">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-teal-200 font-black text-2xl sm:text-3xl shadow-inner">
                 {profile.fullName.charAt(0)}
               </div>
-              <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center shadow-xs">
+              <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-400 border-2 border-slate-900 flex items-center justify-center shadow-xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
               </span>
             </div>
 
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                   {profile.fullName}
                 </h1>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                   {profile.registrationStatus === "approved" ? "Active Student" : profile.registrationStatus}
                 </span>
                 {primaryEnrollment && (
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-teal-500/20 text-teal-200 border border-teal-400/30">
                     {primaryEnrollment.enrollmentNumber}
                   </span>
                 )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-slate-600 pt-0.5">
-                <span>Guardian: <strong className="text-slate-800 font-medium">{profile.fatherOrGuardianName}</strong></span>
-                <span>Mobile: <strong className="text-slate-800 font-mono font-medium">{profile.mobileNumber}</strong></span>
-                {profile.qualification && <span>Qualification: <strong className="text-slate-800 font-medium">{profile.qualification}</strong></span>}
+              <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-teal-100/80 pt-0.5">
+                <span>Guardian: <strong className="text-white font-medium">{profile.fatherOrGuardianName}</strong></span>
+                <span>Mobile: <strong className="text-white font-mono font-medium">{profile.mobileNumber}</strong></span>
+                {profile.qualification && <span>Qualification: <strong className="text-white font-medium">{profile.qualification}</strong></span>}
               </div>
 
-              <p className="text-[11px] text-slate-500 truncate max-w-lg">
+              <p className="text-[11px] text-teal-200/70 truncate max-w-lg">
                 Address: {profile.address}
               </p>
             </div>
@@ -138,15 +139,15 @@ export default function StudentDashboardPage() {
           <div className="flex items-center gap-3 self-stretch md:self-auto">
             <Link
               href="/student/fees"
-              className="flex-1 md:flex-none text-center px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-500/20 transition-all"
+              className="flex-1 md:flex-none text-center px-4 py-2.5 rounded-xl text-xs font-bold text-slate-900 bg-white hover:bg-teal-50 shadow-md shadow-white/10 transition-all cursor-pointer"
             >
               Fee Statement
             </Link>
             <Link
               href="/student/certificates"
-              className="flex-1 md:flex-none text-center px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all flex items-center justify-center gap-1.5"
+              className="flex-1 md:flex-none text-center px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <Award className="w-3.5 h-3.5 text-blue-600" />
+              <Award className="w-3.5 h-3.5 text-teal-300" />
               <span>Certificates</span>
             </Link>
           </div>
@@ -155,15 +156,15 @@ export default function StudentDashboardPage() {
 
       {/* 2. Top Summary Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+        <div className="p-5 rounded-2xl bg-white border border-teal-100/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
           <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
             <span>Enrolled Courses</span>
-            <div className="p-2 rounded-xl bg-blue-50 text-blue-600 border border-blue-200/60">
+            <div className="p-2 rounded-xl bg-teal-50 text-teal-600 border border-teal-200/60">
               <BookOpen className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-2xl font-bold text-slate-900">{summary.totalCourses}</span>
+            <span className="text-2xl font-black text-slate-900">{summary.totalCourses}</span>
             <span className="text-[11px] text-slate-500 block mt-0.5">Active Computer Curriculum</span>
           </div>
         </div>

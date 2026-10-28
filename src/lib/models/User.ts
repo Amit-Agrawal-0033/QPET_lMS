@@ -27,8 +27,11 @@ export interface IUser extends Document {
   mobileNumber?: string;
   passwordHash: string;
   role: "admin" | "trainer" | "student";
-  status: "active" | "inactive" | "pending";
+  status?: "active" | "inactive" | "pending";
   permissions?: IUserPermissions;
+  permissionsUpdatedAt?: Date;
+  permissionsUpdatedBy?: string;
+  permissionPreset?: string;
   studentProfileId?: mongoose.Types.ObjectId;
   lastLogin?: Date;
   createdAt: Date;
@@ -81,6 +84,17 @@ const UserSchema = new Schema<IUser>(
     permissions: {
       type: Schema.Types.Mixed,
       default: {},
+    },
+    permissionsUpdatedAt: {
+      type: Date,
+    },
+    permissionsUpdatedBy: {
+      type: String,
+      trim: true,
+    },
+    permissionPreset: {
+      type: String,
+      trim: true,
     },
     studentProfileId: {
       type: Schema.Types.ObjectId,

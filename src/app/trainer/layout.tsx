@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   ShieldCheck,
+  ShieldAlert,
   ExternalLink,
 } from "lucide-react";
 
@@ -29,6 +30,7 @@ const trainerNav: NavItem[] = [
   { label: "My Students", href: "/trainer/students", icon: Users, requiredPerm: "viewStudents" },
   { label: "Course Curriculum", href: "/trainer/courses", icon: BookOpen, requiredPerm: "viewCourses" },
   { label: "Certificates", href: "/trainer/certificates", icon: Award, requiredPerm: "viewCertificates" },
+  { label: "Security Audit Logs", href: "/trainer/audit-logs", icon: ShieldAlert, requiredPerm: "viewAuditReports" },
 ];
 
 export default function TrainerLayout({ children }: { children: React.ReactNode }) {
