@@ -71,10 +71,9 @@ export default function TrainerLayout({ children }: { children: React.ReactNode 
     setLoggingOut(true);
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-      router.push("/login");
-      router.refresh();
+      window.location.href = "/login";
     } catch {
-      router.push("/login");
+      window.location.href = "/login";
     }
   };
 

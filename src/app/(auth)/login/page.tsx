@@ -89,14 +89,15 @@ function LoginForm() {
       }
 
       // Success redirect strictly by role
-      if (data.user.role === "admin") {
-        router.push("/admin/dashboard");
-      } else if (data.user.role === "trainer") {
-        router.push("/trainer/dashboard");
-      } else {
-        router.push("/student/dashboard");
-      }
-      router.refresh();
+      const target =
+        data.redirectUrl ||
+        (data.user?.role === "admin"
+          ? "/admin/dashboard"
+          : data.user?.role === "trainer"
+          ? "/trainer/dashboard"
+          : "/student/dashboard");
+
+      window.location.href = target;
     } catch (err: any) {
       setError("An unexpected network error occurred. Please try again.");
       setLoading(false);

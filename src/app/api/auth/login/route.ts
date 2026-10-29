@@ -36,26 +36,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Role check if explicitly provided
-    if (role) {
-      if (role === "staff") {
-        if (user.role !== "admin" && user.role !== "trainer") {
-          return NextResponse.json(
-            { error: "Account exists, but is not authorized for staff access." },
-            { status: 403 }
-          );
-        }
-      } else if (user.role !== role) {
-        // Allow administrator account to authenticate from any tab and redirect to admin dashboard
-        if (user.role !== "admin") {
-          return NextResponse.json(
-            { error: `Account exists, but is not authorized for the ${role} portal.` },
-            { status: 403 }
-          );
-        }
-      }
-    }
-
     // Verify status
     if (user.status === "inactive") {
       return NextResponse.json(
@@ -134,8 +114,16 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const redirectUrl =
+      user.role === "admin"
+        ? "/admin/dashboard"
+        : user.role === "trainer"
+        ? "/trainer/dashboard"
+        : "/student/dashboard";
+
     return NextResponse.json({
       success: true,
+      redirectUrl,
       user: {
         id: user._id.toString(),
         identifier: user.identifier,
