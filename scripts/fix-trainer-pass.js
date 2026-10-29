@@ -4,27 +4,20 @@ import dotenv from "dotenv";
 
 dotenv.config({ path: ".env.local" });
 
-async function checkTrainer() {
+async function fixTrainer() {
   await mongoose.connect(process.env.MONGODB_URI);
-  const u = await mongoose.connection.db.collection("users").findOne({ identifier: "roshni.bajpai@qpet.in" });
-  if (!u) {
-    console.log("Trainer roshni.bajpai@qpet.in not found!");
-    process.exit(1);
-  }
+  const hash = await bcrypt.hash("123456", 10);
+  const res = await mongoose.connection.collection("users").updateOne(
+    { identifier: "roshni.bajpai@qpet.in" },
+    { $set: { passwordHash: hash } }
+  );
+  console.log("Updated trainer passwordHash. Modified count:", res.modifiedCount);
 
-  const match = await bcrypt.compare("123456", u.passwordHash);
-  console.log("Password 123456 match:", match);
-
-  if (!match) {
-    const hash = await bcrypt.hash("123456", 10);
-    await mongoose.connection.db.collection("users").updateOne(
-      { _id: u._id },
-      { $set: { passwordHash: hash } }
-    );
-    console.log("Successfully ensured password is set to 123456 for roshni.bajpai@qpet.in");
-  }
+  const u = await mongoose.connection.collection("users").findOne({ identifier: "roshni.bajpai@qpet.in" });
+  const check = await bcrypt.compare("123456", u.passwordHash);
+  console.log("Confirmed bcrypt check with 123456:", check);
 
   await mongoose.disconnect();
 }
 
-checkTrainer().catch(console.error);
+fixTrainer().catch(console.error);
