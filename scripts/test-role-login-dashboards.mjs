@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:3005";
+const BASE_URL = "http://localhost:4000";
 
 async function runTests() {
   console.log("=== ROLE-BASED LOGIN & DASHBOARD VERIFICATION TESTS ===");
