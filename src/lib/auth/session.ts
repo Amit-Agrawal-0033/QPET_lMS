@@ -63,5 +63,13 @@ export async function setSessionCookie(payload: SessionPayload): Promise<string>
 
 export async function clearSessionCookie(): Promise<void> {
   const cookieStore = cookies();
+  cookieStore.set(COOKIE_NAME, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+    expires: new Date(0),
+  });
   cookieStore.delete(COOKIE_NAME);
 }

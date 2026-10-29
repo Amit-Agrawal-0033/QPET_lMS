@@ -19,12 +19,18 @@ export async function POST(req: NextRequest) {
     }
 
     const cleanIdentifier = String(identifier).trim();
+    const domainAppended = cleanIdentifier.includes("@")
+      ? cleanIdentifier.toLowerCase()
+      : `${cleanIdentifier.toLowerCase()}@qpet.in`;
 
     // Query user by identifier, email, or mobile number
     const user = await User.findOne({
       $or: [
         { identifier: cleanIdentifier },
+        { identifier: cleanIdentifier.toLowerCase() },
+        { identifier: domainAppended },
         { email: cleanIdentifier.toLowerCase() },
+        { email: domainAppended },
         { mobileNumber: cleanIdentifier },
       ],
     });

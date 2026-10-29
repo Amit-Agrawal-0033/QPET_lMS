@@ -42,22 +42,9 @@ function LoginForm() {
       setStaffRole("trainer");
     }
 
-    // Auto-redirect if user already has an active session
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.authenticated && data.user) {
-          if (data.user.role === "admin") {
-            router.push("/admin/dashboard");
-          } else if (data.user.role === "trainer") {
-            router.push("/trainer/dashboard");
-          } else if (data.user.role === "student") {
-            router.push("/student/dashboard");
-          }
-        }
-      })
-      .catch(() => {});
-  }, [searchParams, router]);
+    // Purge any existing session so no automatic login or session bleed can occur
+    fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent, activeRole: "student" | "admin" | "trainer") => {
     e.preventDefault();
