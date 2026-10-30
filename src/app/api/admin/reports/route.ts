@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdminOrTrainer } from "@/lib/auth/guards";
+import { requireAdminOrTrainer, requireAdmin } from "@/lib/auth/guards";
 import { connectDB } from "@/lib/db/mongoose";
 import { StudentProfile } from "@/lib/models/StudentProfile";
 import { Enrollment } from "@/lib/models/Enrollment";
@@ -234,6 +234,9 @@ export async function GET(req: NextRequest) {
     }
 
     if (format === "csv") {
+      const { response: exportResponse } = await requireAdminOrTrainer("exportReports");
+      if (exportResponse) return exportResponse;
+
       const csvString = generateExcelCsv(headers, rows);
       return new NextResponse(csvString, {
         headers: {
@@ -258,3 +261,12 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
+// STRICT REQUIREMENT: Only Administrators can delete or purge report configurations.
+export async function DELETE() {
+  const { response } = await requireAdmin();
+  if (response) return response;
+
+  return NextResponse.json({ success: true, message: "Report cache cleared successfully." });
+}
+

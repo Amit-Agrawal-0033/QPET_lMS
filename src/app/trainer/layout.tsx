@@ -13,12 +13,9 @@ import {
   LogOut,
   Menu,
   X,
-  ShieldCheck,
-  ShieldAlert,
-  ExternalLink,
   FileCheck2,
-  FileText,
   FileSpreadsheet,
+  FileText,
 } from "lucide-react";
 
 interface NavItem {
@@ -28,6 +25,8 @@ interface NavItem {
   requiredPerm?: string;
 }
 
+// Security Audit Logs has been completely removed from Faculty Trainer navigation.
+// Audit logs are strictly restricted to Administrators.
 const trainerNav: NavItem[] = [
   { label: "Faculty Dashboard", href: "/trainer/dashboard", icon: LayoutDashboard },
   { label: "New Admissions", href: "/trainer/registrations", icon: FileCheck2, requiredPerm: "viewRegistrations" },
@@ -36,7 +35,6 @@ const trainerNav: NavItem[] = [
   { label: "Batch Enrollments", href: "/trainer/enrollments", icon: FileText, requiredPerm: "viewEnrollments" },
   { label: "Certificates", href: "/trainer/certificates", icon: Award, requiredPerm: "viewCertificates" },
   { label: "Academic Reports", href: "/trainer/reports", icon: FileSpreadsheet, requiredPerm: "viewReports" },
-  { label: "Security Audit Logs", href: "/trainer/audit-logs", icon: ShieldAlert, requiredPerm: "viewAuditReports" },
 ];
 
 export default function TrainerLayout({ children }: { children: React.ReactNode }) {
@@ -44,6 +42,7 @@ export default function TrainerLayout({ children }: { children: React.ReactNode 
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [loadingUser, setLoadingUser] = useState(true);
   const [currentUser, setCurrentUser] = useState<{
     id: string;
     identifier: string;
@@ -64,8 +63,35 @@ export default function TrainerLayout({ children }: { children: React.ReactNode 
           setCurrentUser(data.user);
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        setLoadingUser(false);
+      });
   }, [router]);
+
+  // Route Guard: Block direct URL access to unauthorized pages
+  useEffect(() => {
+    if (!currentUser || loadingUser) return;
+    if (currentUser.role === "admin") return;
+
+    // Immediately block any attempt to open audit logs
+    if (pathname.startsWith("/trainer/audit-logs")) {
+      router.replace("/trainer/dashboard");
+      return;
+    }
+
+    const matchedNav = trainerNav.find(
+      (item) => item.href !== "/trainer/dashboard" && pathname.startsWith(item.href)
+    );
+
+    if (
+      matchedNav &&
+      matchedNav.requiredPerm &&
+      !currentUser.permissions?.[matchedNav.requiredPerm]
+    ) {
+      router.replace("/trainer/dashboard");
+    }
+  }, [currentUser, loadingUser, pathname, router]);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -132,30 +158,33 @@ export default function TrainerLayout({ children }: { children: React.ReactNode 
             </p>
             {trainerNav
               .filter((item) => {
-                if (!currentUser) return true;
+                if (loadingUser) return false;
+                if (!currentUser) return false;
                 if (currentUser.role === "admin") return true;
                 if (!item.requiredPerm) return true;
                 return !!currentUser.permissions?.[item.requiredPerm];
               })
               .map((item) => {
-                const active = pathname === item.href || (item.href !== "/trainer/dashboard" && pathname.startsWith(item.href));
+                const active =
+                  pathname === item.href ||
+                  (item.href !== "/trainer/dashboard" && pathname.startsWith(item.href));
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                    active
-                      ? "bg-purple-600 text-white shadow-sm shadow-purple-600/30"
-                      : "text-slate-600 hover:text-purple-700 hover:bg-purple-50/70"
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${active ? "text-white" : "text-slate-400"}`} />
-                  {item.label}
-                </Link>
-              );
-            })}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                      active
+                        ? "bg-purple-600 text-white shadow-sm shadow-purple-600/30"
+                        : "text-slate-600 hover:text-purple-700 hover:bg-purple-50/70"
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 ${active ? "text-white" : "text-slate-400"}`} />
+                    {item.label}
+                  </Link>
+                );
+              })}
           </nav>
         </div>
 
@@ -170,7 +199,9 @@ export default function TrainerLayout({ children }: { children: React.ReactNode 
                 <p className="text-xs font-bold text-slate-800 truncate">
                   {currentUser?.name || "Faculty Trainer"}
                 </p>
-                <p className="text-[10px] text-slate-500 truncate">{currentUser?.identifier || "Trainer"}</p>
+                <p className="text-[10px] text-slate-500 truncate">
+                  {currentUser?.identifier || "Trainer"}
+                </p>
               </div>
             </div>
             <span className="text-[9px] font-bold uppercase bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded border border-purple-200">

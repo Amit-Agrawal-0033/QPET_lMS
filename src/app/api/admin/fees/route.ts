@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdminOrTrainer } from "@/lib/auth/guards";
+import { requireAdminOrTrainer, requireAdmin } from "@/lib/auth/guards";
 import { connectDB } from "@/lib/db/mongoose";
 import { Payment } from "@/lib/models/Payment";
 import { Enrollment } from "@/lib/models/Enrollment";
@@ -37,8 +37,18 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { session, response } = await requireAdminOrTrainer("editFees");
+  const { session, response } = await requireAdminOrTrainer();
   if (response) return response;
+
+  if (session.role === "trainer") {
+    const canCollect = session.permissions?.createFees || session.permissions?.editFees;
+    if (!canCollect) {
+      return NextResponse.json(
+        { error: "Forbidden: You do not have permission (createFees) to record payments." },
+        { status: 403 }
+      );
+    }
+  }
 
   try {
     const body = await req.json();
@@ -83,3 +93,26 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+// STRICT REQUIREMENT: Only Administrators can void/delete fee transactions.
+export async function DELETE(req: NextRequest) {
+  const { session, response } = await requireAdmin();
+  if (response) return response;
+
+  try {
+    await connectDB();
+    const searchParams = req.nextUrl.searchParams;
+    const paymentId = searchParams.get("id");
+
+    if (!paymentId) {
+      return NextResponse.json({ error: "Payment ID is required." }, { status: 400 });
+    }
+
+    await Payment.findByIdAndDelete(paymentId);
+
+    return NextResponse.json({ success: true, message: "Payment transaction deleted successfully." });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Failed to delete payment." }, { status: 500 });
+  }
+}
+

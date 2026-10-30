@@ -23,6 +23,24 @@ export default function TrainerReportsPage() {
   const [exporting, setExporting] = useState(false);
   const [reportData, setReportData] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<{
+    role: string;
+    permissions?: Record<string, boolean>;
+  } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated && data.user) {
+          setCurrentUser(data.user);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const canExportReports =
+    currentUser?.role === "admin" || !!currentUser?.permissions?.exportReports;
 
   useEffect(() => {
     fetchReportPreview();
@@ -83,14 +101,16 @@ export default function TrainerReportsPage() {
           </p>
         </div>
 
-        <button
-          onClick={handleDownloadCsv}
-          disabled={exporting}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-purple-600/20 transition-all cursor-pointer shrink-0 disabled:opacity-50"
-        >
-          <Download className="w-4 h-4" />
-          <span>{exporting ? "Preparing..." : "Export to Excel/CSV"}</span>
-        </button>
+        {canExportReports && (
+          <button
+            onClick={handleDownloadCsv}
+            disabled={exporting}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-purple-600/20 transition-all cursor-pointer shrink-0 disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" />
+            <span>{exporting ? "Preparing..." : "Export to Excel/CSV"}</span>
+          </button>
+        )}
       </div>
 
       {/* Report Switcher & Filter Bar */}

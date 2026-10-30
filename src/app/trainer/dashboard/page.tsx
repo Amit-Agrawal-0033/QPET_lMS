@@ -7,13 +7,11 @@ import {
   BookOpen,
   Award,
   FileCheck2,
-  Calendar,
   ArrowRight,
   Sparkles,
   GraduationCap,
   CheckCircle2,
-  Clock,
-  Search,
+  AlertCircle,
   ShieldAlert,
 } from "lucide-react";
 
@@ -83,7 +81,7 @@ export default function TrainerDashboardPage() {
   const perms = trainer.permissions || {};
 
   const kpis = [
-    ...(perms.viewStudents !== false
+    ...(perms.viewStudents
       ? [
           {
             label: "Active Students",
@@ -97,17 +95,21 @@ export default function TrainerDashboardPage() {
           },
         ]
       : []),
-    {
-      label: "Active Enrollments",
-      value: stats.activeEnrollments,
-      subtext: "Ongoing Course Batches",
-      icon: FileCheck2,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
-      border: "border-blue-200/60",
-      link: perms.viewStudents !== false ? "/trainer/students" : "/trainer/dashboard",
-    },
-    ...(perms.viewCourses !== false
+    ...(perms.viewEnrollments
+      ? [
+          {
+            label: "Active Enrollments",
+            value: stats.activeEnrollments,
+            subtext: "Ongoing Course Batches",
+            icon: FileCheck2,
+            color: "text-blue-600",
+            bg: "bg-blue-50",
+            border: "border-blue-200/60",
+            link: "/trainer/enrollments",
+          },
+        ]
+      : []),
+    ...(perms.viewCourses
       ? [
           {
             label: "Courses in Syllabus",
@@ -135,21 +137,9 @@ export default function TrainerDashboardPage() {
           },
         ]
       : []),
-    ...(perms.viewAuditReports
-      ? [
-          {
-            label: "Security Audit Logs",
-            value: "Clearance Granted",
-            subtext: "Immutable System Logs",
-            icon: ShieldAlert,
-            color: "text-amber-600",
-            bg: "bg-amber-50",
-            border: "border-amber-200/60",
-            link: "/trainer/audit-logs",
-          },
-        ]
-      : []),
   ];
+
+  const hasAnyPermission = Object.values(perms).some(Boolean);
 
   return (
     <div className="space-y-6">
@@ -171,7 +161,7 @@ export default function TrainerDashboardPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            {perms.editStudents && (
+            {(perms.createStudents || perms.editStudents) && (
               <Link
                 href="/trainer/students"
                 className="px-3.5 py-2 rounded-xl bg-white text-purple-900 hover:bg-purple-50 font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
@@ -189,7 +179,7 @@ export default function TrainerDashboardPage() {
                 <span>Admissions</span>
               </Link>
             )}
-            {perms.editCourses && (
+            {(perms.createCourses || perms.editCourses) && (
               <Link
                 href="/trainer/courses"
                 className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold text-xs backdrop-blur-md transition-all flex items-center gap-1.5 cursor-pointer"
@@ -211,117 +201,134 @@ export default function TrainerDashboardPage() {
         </div>
       </div>
 
+      {/* Notice if Trainer has zero permissions granted */}
+      {!hasAnyPermission && (
+        <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <h3 className="text-sm font-bold">No Module Clearances Assigned</h3>
+            <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+              Your account has been initialized with default denied permissions. Please contact your system Administrator to assign View, Create, or Edit clearances to your profile.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-        {kpis.map((kpi, idx) => {
-          const Icon = kpi.icon;
-          return (
-            <Link
-              key={idx}
-              href={kpi.link}
-              className={`p-5 rounded-2xl bg-white border ${kpi.border} shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all group block`}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  {kpi.label}
-                </span>
-                <div className={`w-9 h-9 rounded-xl ${kpi.bg} ${kpi.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                  <Icon className="w-5 h-5" />
+      {kpis.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          {kpis.map((kpi, idx) => {
+            const Icon = kpi.icon;
+            return (
+              <Link
+                key={idx}
+                href={kpi.link}
+                className={`p-5 rounded-2xl bg-white border ${kpi.border} shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all group block`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    {kpi.label}
+                  </span>
+                  <div className={`w-9 h-9 rounded-xl ${kpi.bg} ${kpi.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
                 </div>
-              </div>
-              <div className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                {kpi.value}
-              </div>
-              <p className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                {kpi.subtext}
-              </p>
-            </Link>
-          );
-        })}
-      </div>
+                <div className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                  {kpi.value}
+                </div>
+                <p className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  {kpi.subtext}
+                </p>
+              </Link>
+            );
+          })}
+        </div>
+      )}
 
       {/* Main Grid: Recent Student Enrollments & Faculty Quick Info */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Enrollments Table (2 Cols) */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <GraduationCap className="w-5 h-5 text-purple-600" />
-                Recent Student Enrollments
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">Students recently registered and enrolled in courses</p>
+        {(perms.viewEnrollments || perms.viewStudents) && (
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <GraduationCap className="w-5 h-5 text-purple-600" />
+                  Recent Student Enrollments
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">Students recently registered and enrolled in courses</p>
+              </div>
+              <Link
+                href="/trainer/students"
+                className="text-xs font-bold text-purple-700 hover:text-purple-800 flex items-center gap-1"
+              >
+                View All <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
-            <Link
-              href="/trainer/students"
-              className="text-xs font-bold text-purple-700 hover:text-purple-800 flex items-center gap-1"
-            >
-              View All <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-50/70 border-b border-slate-200/80 text-slate-500 font-bold uppercase tracking-wider">
-                  <th className="py-3 px-4">Student</th>
-                  <th className="py-3 px-4">Course</th>
-                  <th className="py-3 px-4">Duration</th>
-                  <th className="py-3 px-4">Enrollment Date</th>
-                  <th className="py-3 px-4 text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {recentEnrollments.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-400">
-                      No active enrollments found.
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50/70 border-b border-slate-200/80 text-slate-500 font-bold uppercase tracking-wider">
+                    <th className="py-3 px-4">Student</th>
+                    <th className="py-3 px-4">Course</th>
+                    <th className="py-3 px-4">Duration</th>
+                    <th className="py-3 px-4">Enrollment Date</th>
+                    <th className="py-3 px-4 text-right">Status</th>
                   </tr>
-                ) : (
-                  recentEnrollments.map((item) => (
-                    <tr key={item._id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-slate-900">{item.studentName}</div>
-                        <div className="text-[11px] text-slate-500">{item.studentPhone}</div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="font-semibold text-slate-800">{item.courseTitle}</span>
-                        <span className="ml-1.5 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-mono">
-                          {item.courseCode}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-slate-600 font-medium">
-                        {item.duration}
-                      </td>
-                      <td className="py-3 px-4 text-slate-500">
-                        {new Date(item.enrolledAt).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          <CheckCircle2 className="w-3 h-3" />
-                          Active
-                        </span>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {recentEnrollments.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-slate-400">
+                        No active enrollments found.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    recentEnrollments.map((item) => (
+                      <tr key={item._id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-slate-900">{item.studentName}</div>
+                          <div className="text-[11px] text-slate-500">{item.studentPhone}</div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="font-semibold text-slate-800">{item.courseTitle}</span>
+                          <span className="ml-1.5 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-mono">
+                            {item.courseCode}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-600 font-medium">
+                          {item.duration}
+                        </td>
+                        <td className="py-3 px-4 text-slate-500">
+                          {new Date(item.enrolledAt).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Active
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Faculty Guide & Security Info (1 Col) */}
-        <div className="space-y-6">
+        <div className={`space-y-6 ${(perms.viewEnrollments || perms.viewStudents) ? "" : "lg:col-span-3"}`}>
           <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
             <h3 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              Role & Permissions
+              Role & Assigned Permissions
             </h3>
             <p className="text-xs text-slate-600 leading-relaxed">
               You are authenticated as <strong>{trainer.name}</strong> with <strong>Faculty Trainer</strong> clearance.
@@ -335,15 +342,15 @@ export default function TrainerDashboardPage() {
                 </span>
               </div>
               <div className="flex items-center justify-between text-slate-700">
-                <span>Students Management:</span>
-                <span className={`font-semibold ${perms.editStudents ? "text-purple-700" : perms.viewStudents !== false ? "text-emerald-600" : "text-slate-400"}`}>
-                  {perms.editStudents ? "✓ Add & Edit" : perms.viewStudents !== false ? "✓ View Only" : "✕ Restricted"}
+                <span>Students Directory:</span>
+                <span className={`font-semibold ${perms.editStudents ? "text-purple-700" : perms.viewStudents ? "text-emerald-600" : "text-slate-400"}`}>
+                  {perms.editStudents ? "✓ Add & Edit" : perms.viewStudents ? "✓ View Only" : "✕ Restricted"}
                 </span>
               </div>
               <div className="flex items-center justify-between text-slate-700">
                 <span>Course Curriculum:</span>
-                <span className={`font-semibold ${perms.editCourses ? "text-purple-700" : perms.viewCourses !== false ? "text-emerald-600" : "text-slate-400"}`}>
-                  {perms.editCourses ? "✓ Create & Edit" : perms.viewCourses !== false ? "✓ View Only" : "✕ Restricted"}
+                <span className={`font-semibold ${perms.editCourses ? "text-purple-700" : perms.viewCourses ? "text-emerald-600" : "text-slate-400"}`}>
+                  {perms.editCourses ? "✓ Create & Edit" : perms.viewCourses ? "✓ View Only" : "✕ Restricted"}
                 </span>
               </div>
               <div className="flex items-center justify-between text-slate-700">
@@ -359,26 +366,9 @@ export default function TrainerDashboardPage() {
                 </span>
               </div>
               <div className="flex items-center justify-between text-slate-700">
-                <span>Financial Ledger:</span>
+                <span>Security Audit Logs:</span>
                 <span className="font-bold text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded">Restricted (Admin Only)</span>
               </div>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl border border-purple-200/60 p-5">
-            <h4 className="text-xs font-bold text-purple-900 uppercase tracking-wider mb-2">
-              Need Course or Student Updates?
-            </h4>
-            <p className="text-xs text-purple-800/80 leading-relaxed">
-              To request new course modules, batch schedule changes, or student admission verification, contact the QPET Administrative Department.
-            </p>
-            <div className="mt-4">
-              <Link
-                href="/trainer/courses"
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-purple-700 hover:text-purple-900 underline"
-              >
-                Browse All Course Curriculum →
-              </Link>
             </div>
           </div>
         </div>

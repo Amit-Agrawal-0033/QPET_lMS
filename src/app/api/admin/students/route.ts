@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdminOrTrainer } from "@/lib/auth/guards";
+import { requireAdminOrTrainer, requireAdmin } from "@/lib/auth/guards";
 import { connectDB } from "@/lib/db/mongoose";
 import { StudentProfile } from "@/lib/models/StudentProfile";
 import { User } from "@/lib/models/User";
@@ -66,8 +66,18 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { session, response } = await requireAdminOrTrainer("editStudents");
+  const { session, response } = await requireAdminOrTrainer();
   if (response) return response;
+
+  if (session.role === "trainer") {
+    const canCreate = session.permissions?.createStudents || session.permissions?.editStudents;
+    if (!canCreate) {
+      return NextResponse.json(
+        { error: "Forbidden: You do not have permission (createStudents) to add new students." },
+        { status: 403 }
+      );
+    }
+  }
 
   try {
     await connectDB();
@@ -391,6 +401,16 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
+    // STRICT REQUIREMENT: Only administrators can drop or inactivate students.
+    if (action === "drop" || action === "inactivate") {
+      if (session.role !== "admin") {
+        return NextResponse.json(
+          { error: "Forbidden: Only administrators can drop or inactivate students. Trainer deletion/drop is strictly prohibited." },
+          { status: 403 }
+        );
+      }
+    }
+
     const student = await StudentProfile.findById(studentId);
     if (!student) {
       return NextResponse.json({ error: "Student not found." }, { status: 404 });
@@ -455,8 +475,15 @@ export async function PATCH(req: NextRequest) {
       });
     }
 
-    // 2. ACTION: DROP / INACTIVATE STUDENT (Mid-course dropout)
+    // 2. ACTION: DROP / INACTIVATE STUDENT (Mid-course dropout - STRICTLY ADMIN ONLY)
     if (action === "drop" || action === "inactivate") {
+      if (session.role !== "admin") {
+        return NextResponse.json(
+          { error: "Forbidden: Only administrators can drop or inactivate students. Trainer deletion/drop is strictly prohibited." },
+          { status: 403 }
+        );
+      }
+
       const reason = dropReason?.trim() || "Student dropped course mid-way";
 
       student.registrationStatus = "dropped";
@@ -539,3 +566,49 @@ export async function PATCH(req: NextRequest) {
     );
   }
 }
+
+// STRICT REQUIREMENT: Only Administrators can delete students. Trainers are strictly prohibited.
+export async function DELETE(req: NextRequest) {
+  const { session, response } = await requireAdmin();
+  if (response) return response;
+
+  try {
+    await connectDB();
+    const searchParams = req.nextUrl.searchParams;
+    const studentId = searchParams.get("id");
+
+    if (!studentId) {
+      return NextResponse.json({ error: "Student ID is required." }, { status: 400 });
+    }
+
+    const student = await StudentProfile.findById(studentId);
+    if (!student) {
+      return NextResponse.json({ error: "Student not found." }, { status: 404 });
+    }
+
+    // Delete associated student user if exists
+    if (student.userId) {
+      await User.findByIdAndDelete(student.userId);
+    }
+
+    // Delete student profile
+    await StudentProfile.findByIdAndDelete(studentId);
+
+    // Cancel enrollments
+    await Enrollment.deleteMany({ studentId });
+
+    await logAudit({
+      action: "STUDENT_DELETED",
+      performedBy: session.name || session.identifier,
+      performedByRole: "admin",
+      targetType: "StudentProfile",
+      targetId: studentId,
+      details: { fullName: student.fullName, mobile: student.mobileNumber },
+    });
+
+    return NextResponse.json({ success: true, message: "Student record deleted successfully." });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Failed to delete student." }, { status: 500 });
+  }
+}
+

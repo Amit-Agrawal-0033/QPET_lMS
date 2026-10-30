@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdminOrTrainer } from "@/lib/auth/guards";
+import { requireAdminOrTrainer, requireAdmin } from "@/lib/auth/guards";
 import { connectDB } from "@/lib/db/mongoose";
 import { Certificate } from "@/lib/models/Certificate";
 import { Enrollment } from "@/lib/models/Enrollment";
@@ -136,3 +136,31 @@ export async function PATCH(req: NextRequest) {
     );
   }
 }
+
+// STRICT REQUIREMENT: Only Administrators can delete certificates. Trainers are strictly prohibited.
+export async function DELETE(req: NextRequest) {
+  const { session, response } = await requireAdmin();
+  if (response) return response;
+
+  try {
+    await connectDB();
+    const searchParams = req.nextUrl.searchParams;
+    const certId = searchParams.get("id");
+
+    if (!certId) {
+      return NextResponse.json({ error: "Certificate ID is required." }, { status: 400 });
+    }
+
+    const cert = await Certificate.findById(certId);
+    if (!cert) {
+      return NextResponse.json({ error: "Certificate not found." }, { status: 404 });
+    }
+
+    await Certificate.findByIdAndDelete(certId);
+
+    return NextResponse.json({ success: true, message: "Certificate deleted successfully." });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Failed to delete certificate." }, { status: 500 });
+  }
+}
+

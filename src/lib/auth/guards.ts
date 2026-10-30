@@ -58,6 +58,36 @@ export async function requireAdminOrTrainer(permissionKey?: string): Promise<
   }
 
   if (session.role === "trainer") {
+    // If request attempts a delete action, immediately deny for trainers!
+    if (
+      permissionKey &&
+      (permissionKey.toLowerCase().startsWith("delete") ||
+        permissionKey.toLowerCase().includes("delete"))
+    ) {
+      return {
+        response: NextResponse.json(
+          {
+            error:
+              "Forbidden: Trainer accounts are strictly prohibited from deleting records. Administrator privileges required.",
+          },
+          { status: 403 }
+        ),
+      };
+    }
+
+    // If request attempts audit log access, immediately deny for trainers!
+    if (permissionKey && permissionKey.toLowerCase().includes("audit")) {
+      return {
+        response: NextResponse.json(
+          {
+            error:
+              "Forbidden: Security Audit Logs are strictly restricted to Administrators.",
+          },
+          { status: 403 }
+        ),
+      };
+    }
+
     // Real-time database verification ensures immediate enforcement upon permission revocation
     const { verifyTrainerPermissionRealtime } = await import("./authorization");
     const check = await verifyTrainerPermissionRealtime(session.userId, permissionKey);

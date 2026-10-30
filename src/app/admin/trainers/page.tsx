@@ -51,24 +51,14 @@ interface ITrainer {
   createdAt: string;
 }
 
-const AVAILABLE_PERMISSIONS = [
-  { key: "viewStudents", label: "View Students", group: "Students", description: "Access student profiles & contact records" },
-  { key: "editStudents", label: "Edit / Add Students", group: "Students", description: "Update student details and record changes" },
-  { key: "viewRegistrations", label: "View Registrations", group: "Registrations", description: "View admission registration forms" },
-  { key: "editRegistrations", label: "Approve Registrations", group: "Registrations", description: "Review and approve student admissions" },
-  { key: "viewCourses", label: "View Courses", group: "Curriculum", description: "Access course syllabus and outlines" },
-  { key: "editCourses", label: "Create / Edit Courses", group: "Curriculum", description: "Modify syllabus modules and details" },
-  { key: "viewEnrollments", label: "View Enrollments", group: "Enrollments", description: "View student course enrollment rosters" },
-  { key: "editEnrollments", label: "Manage Enrollments", group: "Enrollments", description: "Assign batches and course enrollments" },
-  { key: "viewFees", label: "View Fee Ledger", group: "Fees & Accounts", description: "View student fee agreement ledger" },
-  { key: "editFees", label: "Collect / Record Fees", group: "Fees & Accounts", description: "Record student installment payments" },
-  { key: "viewReceipts", label: "View Receipts", group: "Fees & Accounts", description: "Access official payment receipts" },
-  { key: "viewCertificates", label: "View Certificates", group: "Certificates", description: "View issued certificates and verify QR" },
-  { key: "generateCertificates", label: "Generate Certificate", group: "Certificates", description: "Issue official course completion certificates" },
-  { key: "editCertificates", label: "Issue / Edit Certificates", group: "Certificates", description: "Modify certificate details or mark revoked" },
-  { key: "viewReports", label: "View Reports & Export", group: "Reports", description: "View academic reports and exports" },
-  { key: "viewAuditReports", label: "View Audit Reports", group: "Security & Auditing", description: "Access immutable security audit trail" },
-];
+const AVAILABLE_PERMISSIONS = PERMISSION_MATRIX.map((p) => ({
+  key: p.key,
+  label: p.label,
+  group: p.moduleLabel,
+  description: p.description,
+  action: p.action,
+  adminOnly: p.adminOnly,
+}));
 
 export default function TrainersManagementPage() {
   const [trainers, setTrainers] = useState<ITrainer[]>([]);
@@ -128,7 +118,7 @@ export default function TrainersManagementPage() {
   const openCreateModal = () => {
     setEditingTrainer(null);
     setPermFilter("");
-    setSelectedPreset("trainerStandard");
+    setSelectedPreset("denied");
     setFormData({
       name: "",
       identifier: "",
@@ -136,12 +126,7 @@ export default function TrainersManagementPage() {
       mobileNumber: "",
       password: "",
       status: "active",
-      permissions: {
-        viewStudents: true,
-        viewCourses: true,
-        viewEnrollments: true,
-        viewCertificates: true,
-      },
+      permissions: {},
     });
     setModalOpen(true);
   };
@@ -163,6 +148,9 @@ export default function TrainersManagementPage() {
   };
 
   const handleTogglePermission = (key: string) => {
+    const permDef = AVAILABLE_PERMISSIONS.find((p) => p.key === key);
+    if (permDef?.adminOnly) return; // Strict: Trainers can NEVER be granted delete permissions
+
     setSelectedPreset("custom");
     setFormData((prev) => {
       const nextVal = !prev.permissions[key];
@@ -171,7 +159,6 @@ export default function TrainersManagementPage() {
         [key]: nextVal,
       };
       if (key === "generateCertificates") {
-        updated.editCertificates = nextVal;
         if (nextVal) updated.viewCertificates = true;
       }
       return {
@@ -185,7 +172,7 @@ export default function TrainersManagementPage() {
     setSelectedPreset("custom");
     setFormData((prev) => {
       const updated = { ...prev.permissions };
-      AVAILABLE_PERMISSIONS.filter((p) => p.group === groupName).forEach((p) => {
+      AVAILABLE_PERMISSIONS.filter((p) => p.group === groupName && !p.adminOnly).forEach((p) => {
         updated[p.key] = selectAll;
       });
       return { ...prev, permissions: updated };
@@ -196,16 +183,17 @@ export default function TrainersManagementPage() {
     setSelectedPreset(selectAll ? "fullFaculty" : "clearAll");
     setFormData((prev) => {
       const updated: Record<string, boolean> = {};
-      AVAILABLE_PERMISSIONS.forEach((p) => {
+      AVAILABLE_PERMISSIONS.filter((p) => !p.adminOnly).forEach((p) => {
         updated[p.key] = selectAll;
       });
       return { ...prev, permissions: updated };
     });
   };
 
-  const applyPreset = (presetKey: "readOnly" | "trainerStandard" | "academicLead" | "fullFaculty" | "clearAll") => {
-    if (presetKey === "clearAll") {
+  const applyPreset = (presetKey: "denied" | "readOnly" | "trainerStandard" | "academicLead" | "fullFaculty" | "clearAll") => {
+    if (presetKey === "clearAll" || presetKey === "denied") {
       handleGlobalSelectAll(false);
+      setSelectedPreset("denied");
       return;
     }
     const presetObj = PERMISSION_PRESETS[presetKey];
@@ -354,10 +342,13 @@ export default function TrainersManagementPage() {
   const inactiveCount = trainers.filter((t) => t.status === "inactive").length;
 
   // Grouped permissions for modal
+  const grantablePerms = AVAILABLE_PERMISSIONS.filter((p) => !p.adminOnly);
   const permissionGroups = Array.from(new Set(AVAILABLE_PERMISSIONS.map((p) => p.group)));
 
-  // Count active permissions in form
-  const grantedCount = Object.values(formData.permissions || {}).filter(Boolean).length;
+  // Count active permissions in form (excluding admin-only)
+  const grantedCount = Object.entries(formData.permissions || {}).filter(
+    ([k, v]) => v && grantablePerms.some((p) => p.key === k)
+  ).length;
 
   return (
     <div className="space-y-6">
@@ -550,7 +541,9 @@ export default function TrainersManagementPage() {
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-xs">
                     {filteredTrainers.map((t) => {
-                      const permKeys = Object.keys(t.permissions || {}).filter((k) => t.permissions[k]);
+                      const permKeys = Object.keys(t.permissions || {}).filter(
+                        (k) => t.permissions[k] && grantablePerms.some((p) => p.key === k)
+                      );
                       return (
                         <tr key={t._id} className="hover:bg-slate-50/60 transition-colors">
                           <td className="py-4 px-4 sm:px-6">
@@ -595,7 +588,7 @@ export default function TrainersManagementPage() {
                             <div>
                               <div className="flex items-center gap-1.5 mb-1.5">
                                 <span className="font-bold text-[11px] text-slate-800">
-                                  {permKeys.length} of {AVAILABLE_PERMISSIONS.length} Enabled
+                                  {permKeys.length} of {grantablePerms.length} Enabled
                                 </span>
                                 {t.permissionPreset && (
                                   <span className="text-[9px] uppercase font-bold px-1.5 py-0.2 rounded bg-purple-100 text-purple-700">
@@ -746,8 +739,9 @@ export default function TrainersManagementPage() {
                   <th className="py-3.5 px-3 text-center">Enrollments</th>
                   <th className="py-3.5 px-3 text-center">Registrations</th>
                   <th className="py-3.5 px-3 text-center">Certificates</th>
+                  <th className="py-3.5 px-3 text-center">Fees Ledger</th>
                   <th className="py-3.5 px-3 text-center">Reports</th>
-                  <th className="py-3.5 px-3 text-center bg-amber-50/50">Audit Logs</th>
+                  <th className="py-3.5 px-3 text-center bg-rose-50/50">Delete (All)</th>
                   <th className="py-3.5 px-4 text-right">Configure</th>
                 </tr>
               </thead>
@@ -820,6 +814,17 @@ export default function TrainersManagementPage() {
                         )}
                       </td>
 
+                      {/* Fees */}
+                      <td className="py-4 px-3 text-center">
+                        {p.viewFees ? (
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700">
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center justify-center w-6 h-6 text-slate-300 font-bold">-</span>
+                        )}
+                      </td>
+
                       {/* Reports */}
                       <td className="py-4 px-3 text-center">
                         {p.viewReports ? (
@@ -831,15 +836,11 @@ export default function TrainersManagementPage() {
                         )}
                       </td>
 
-                      {/* Audit Logs */}
-                      <td className="py-4 px-3 text-center bg-amber-50/20">
-                        {p.viewAuditReports ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700">
-                            <ShieldAlert className="w-3.5 h-3.5" />
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center justify-center w-6 h-6 text-slate-300 font-bold">-</span>
-                        )}
+                      {/* Delete (All) */}
+                      <td className="py-4 px-3 text-center bg-rose-50/20">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                          <Lock className="w-2.5 h-2.5" /> Denied
+                        </span>
                       </td>
 
                       {/* Action */}
@@ -1017,13 +1018,24 @@ export default function TrainersManagementPage() {
                       Granular Module Permissions
                     </h4>
                     <p className="text-[11px] text-slate-400 mt-0.5">
-                      {grantedCount} of {AVAILABLE_PERMISSIONS.length} Permissions Granted • Real-time server enforcement
+                      {grantedCount} of {grantablePerms.length} Permissions Granted • Real-time server enforcement
                     </p>
                   </div>
 
                   {/* Permission Presets Bar */}
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="text-[10px] text-slate-400 font-semibold uppercase">Presets:</span>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset("denied")}
+                      className={`px-2 py-1 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+                        selectedPreset === "denied"
+                          ? "bg-slate-900 text-white shadow-xs"
+                          : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                      }`}
+                    >
+                      Default (All Denied)
+                    </button>
                     <button
                       type="button"
                       onClick={() => applyPreset("trainerStandard")}
@@ -1056,6 +1068,17 @@ export default function TrainersManagementPage() {
                       }`}
                     >
                       Academic Lead
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset("fullFaculty")}
+                      className={`px-2 py-1 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+                        selectedPreset === "fullFaculty"
+                          ? "bg-blue-600 text-white shadow-xs"
+                          : "bg-indigo-100 hover:bg-indigo-200 text-indigo-800"
+                      }`}
+                    >
+                      Full Faculty
                     </button>
                     <button
                       type="button"
@@ -1098,19 +1121,6 @@ export default function TrainersManagementPage() {
                   </div>
                 </div>
 
-                {/* Security Warning if Audit Reports is checked */}
-                {formData.permissions.viewAuditReports && (
-                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-300/80 text-amber-900 text-xs flex items-start gap-2.5">
-                    <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-bold block">Security Audit Clearance Enabled</span>
-                      <p className="text-[11px] leading-relaxed text-amber-800">
-                        This trainer will have visibility over institutional security audit trails, login records, and staff activity.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
                 {/* Grouped Permissions Matrix */}
                 <div className="space-y-4 max-h-96 overflow-y-auto pr-1">
                   {permissionGroups.map((group) => {
@@ -1125,7 +1135,7 @@ export default function TrainersManagementPage() {
 
                     if (groupPerms.length === 0) return null;
 
-                    const allGroupChecked = groupPerms.every((p) => formData.permissions[p.key]);
+                    const allGroupChecked = groupPerms.filter((p) => !p.adminOnly).every((p) => formData.permissions[p.key]);
 
                     return (
                       <div key={group} className="bg-slate-50/70 p-3.5 rounded-2xl border border-slate-200/80">
@@ -1142,26 +1152,43 @@ export default function TrainersManagementPage() {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {groupPerms.map((perm) => {
+                            if (perm.adminOnly) {
+                              return (
+                                <div
+                                  key={perm.key}
+                                  className="flex items-start gap-2.5 p-2.5 rounded-xl border border-slate-200 bg-slate-100/70 text-slate-400 text-xs select-none opacity-85"
+                                >
+                                  <div className="w-4 h-4 rounded mt-0.5 flex items-center justify-center shrink-0 bg-slate-200 text-slate-500">
+                                    <Lock className="w-2.5 h-2.5" />
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-bold text-slate-600 block leading-tight">{perm.label}</span>
+                                      <span className="text-[9px] font-bold uppercase bg-slate-200 text-slate-600 px-1 py-0.2 rounded">Admin Only</span>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">
+                                      {perm.description} (Trainers cannot delete records)
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            }
+
                             const isChecked = !!formData.permissions[perm.key];
-                            const isAudit = perm.key === "viewAuditReports";
                             return (
                               <label
                                 key={perm.key}
                                 onClick={() => handleTogglePermission(perm.key)}
                                 className={`flex items-start gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer transition-all select-none ${
                                   isChecked
-                                    ? isAudit
-                                      ? "bg-amber-50 border-amber-300 text-amber-950 font-medium"
-                                      : "bg-blue-50/80 border-blue-200 text-blue-950 font-medium"
+                                    ? "bg-blue-50/80 border-blue-200 text-blue-950 font-medium"
                                     : "bg-white border-slate-200/80 text-slate-600 hover:bg-slate-50"
                                 }`}
                               >
                                 <div
                                   className={`w-4 h-4 rounded mt-0.5 flex items-center justify-center shrink-0 transition-colors ${
                                     isChecked
-                                      ? isAudit
-                                        ? "bg-amber-600 text-white"
-                                        : "bg-blue-600 text-white"
+                                      ? "bg-blue-600 text-white"
                                       : "border border-slate-300 bg-white"
                                   }`}
                                 >

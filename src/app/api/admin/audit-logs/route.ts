@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdminOrTrainer } from "@/lib/auth/guards";
+import { requireAdmin } from "@/lib/auth/guards";
 import { connectDB } from "@/lib/db/mongoose";
 import { AuditLog } from "@/lib/models/AuditLog";
 
+// STRICT REQUIREMENT: Audit Logs are accessible ONLY by Administrator accounts.
+// Trainers are completely forbidden from viewing or querying system audit logs.
 export async function GET(req: NextRequest) {
-  // Allow Admin OR Trainer who explicitly has the 'viewAuditReports' permission
-  const { session, response } = await requireAdminOrTrainer("viewAuditReports");
+  const { session, response } = await requireAdmin();
   if (response) return response;
 
   try {
@@ -13,12 +14,31 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const action = searchParams.get("action");
     const role = searchParams.get("role");
+    const moduleName = searchParams.get("module") || searchParams.get("targetType");
+    const trainer = searchParams.get("trainer");
     const search = searchParams.get("search");
-    const limit = Math.min(Number(searchParams.get("limit")) || 100, 1000);
+    const fromDate = searchParams.get("fromDate");
+    const toDate = searchParams.get("toDate");
+    const limit = Math.min(Number(searchParams.get("limit")) || 200, 2000);
 
     const filter: any = {};
-    if (action) filter.action = action;
+    if (action && action !== "all") filter.action = action;
     if (role && role !== "all") filter.performedByRole = role;
+    if (moduleName && moduleName !== "all") filter.targetType = moduleName;
+
+    if (trainer && trainer.trim()) {
+      filter.performedBy = { $regex: trainer.trim(), $options: "i" };
+    }
+
+    if (fromDate || toDate) {
+      filter.createdAt = {};
+      if (fromDate) filter.createdAt.$gte = new Date(fromDate);
+      if (toDate) {
+        const end = new Date(toDate);
+        end.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = end;
+      }
+    }
 
     if (search && search.trim()) {
       const regex = new RegExp(search.trim(), "i");
@@ -48,3 +68,10 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// Audit logs are append-only and immutable. Deletion is forbidden even via API.
+export async function DELETE() {
+  return NextResponse.json(
+    { error: "Forbidden: Security audit trails are immutable and cannot be deleted." },
+    { status: 405 }
+  );
+}

@@ -59,6 +59,11 @@ export default function TrainerEnrollmentsPage() {
     fetchDropdowns();
   }, []);
 
+  const canCreateEnrollments =
+    currentUser?.role === "admin" ||
+    !!currentUser?.permissions?.createEnrollments ||
+    !!currentUser?.permissions?.editEnrollments;
+
   const canEditEnrollments =
     currentUser?.role === "admin" || !!currentUser?.permissions?.editEnrollments;
 
@@ -163,7 +168,7 @@ export default function TrainerEnrollmentsPage() {
             />
           </div>
 
-          {canEditEnrollments && (
+          {canCreateEnrollments && (
             <button
               onClick={() => {
                 setModalError(null);

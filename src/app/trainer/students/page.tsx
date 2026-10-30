@@ -91,6 +91,11 @@ export default function TrainerStudentsPage() {
     fetchCourses();
   }, []);
 
+  const canCreateStudents =
+    currentUser?.role === "admin" ||
+    !!currentUser?.permissions?.createStudents ||
+    !!currentUser?.permissions?.editStudents;
+
   const canEditStudents =
     currentUser?.role === "admin" || !!currentUser?.permissions?.editStudents;
 
@@ -270,7 +275,7 @@ export default function TrainerStudentsPage() {
             />
           </div>
 
-          {canEditStudents && (
+          {canCreateStudents && (
             <button
               onClick={() => {
                 setModalError(null);

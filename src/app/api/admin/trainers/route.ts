@@ -4,6 +4,7 @@ import { User, IUserPermissions } from "@/lib/models/User";
 import { requireAdmin } from "@/lib/auth/guards";
 import { hashPassword } from "@/lib/auth/session";
 import { logAudit } from "@/lib/services/audit.service";
+import { sanitizeTrainerPermissions } from "@/lib/auth/permissions";
 
 // GET /api/admin/trainers - List all trainers
 export async function GET(req: NextRequest) {
@@ -80,27 +81,7 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await hashPassword(password);
 
-    const defaultPermissions: IUserPermissions = {
-      viewStudents: true,
-      editStudents: false,
-      viewRegistrations: false,
-      editRegistrations: false,
-      viewCourses: true,
-      editCourses: false,
-      viewEnrollments: true,
-      editEnrollments: false,
-      viewFees: false,
-      editFees: false,
-      viewReceipts: false,
-      viewCertificates: true,
-      editCertificates: false,
-      viewReports: false,
-      viewAuditReports: false,
-    };
-
-    const finalPermissions: IUserPermissions = permissions
-      ? { ...defaultPermissions, ...permissions }
-      : defaultPermissions;
+    const finalPermissions: IUserPermissions = sanitizeTrainerPermissions(permissions || {});
 
     const newTrainer = await User.create({
       name: name.trim(),
@@ -111,6 +92,8 @@ export async function POST(req: NextRequest) {
       role: "trainer",
       status: status || "active",
       permissions: finalPermissions,
+      permissionsUpdatedAt: new Date(),
+      permissionsUpdatedBy: session.name || session.identifier,
     });
 
     // Record immutable audit log
@@ -201,8 +184,9 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (permissions && typeof permissions === "object") {
-      changes.permissions = { from: trainer.permissions, to: permissions };
-      trainer.permissions = permissions;
+      const sanitized = sanitizeTrainerPermissions(permissions);
+      changes.permissions = { from: trainer.permissions, to: sanitized };
+      trainer.permissions = sanitized;
       trainer.permissionsUpdatedAt = new Date();
       trainer.permissionsUpdatedBy = session.name || session.identifier;
       if (body.permissionPreset) {

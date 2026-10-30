@@ -57,6 +57,11 @@ export default function TrainerCoursesPage() {
     fetchCourses();
   }, []);
 
+  const canCreateCourses =
+    currentUser?.role === "admin" ||
+    !!currentUser?.permissions?.createCourses ||
+    !!currentUser?.permissions?.editCourses;
+
   const canEditCourses =
     currentUser?.role === "admin" || !!currentUser?.permissions?.editCourses;
 
@@ -180,7 +185,7 @@ export default function TrainerCoursesPage() {
             />
           </div>
 
-          {canEditCourses && (
+          {canCreateCourses && (
             <button
               onClick={openAddModal}
               className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-purple-600/20 transition-all cursor-pointer shrink-0"

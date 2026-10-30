@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdminOrTrainer } from "@/lib/auth/guards";
+import { requireAdminOrTrainer, requireAdmin } from "@/lib/auth/guards";
 import { connectDB } from "@/lib/db/mongoose";
 import { StudentProfile } from "@/lib/models/StudentProfile";
 import { User } from "@/lib/models/User";
@@ -234,3 +234,26 @@ export async function PATCH(req: NextRequest) {
     );
   }
 }
+
+// STRICT REQUIREMENT: Only Administrators can delete registration applications.
+export async function DELETE(req: NextRequest) {
+  const { session, response } = await requireAdmin();
+  if (response) return response;
+
+  try {
+    await connectDB();
+    const searchParams = req.nextUrl.searchParams;
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "Registration ID is required." }, { status: 400 });
+    }
+
+    await StudentProfile.findByIdAndDelete(id);
+
+    return NextResponse.json({ success: true, message: "Registration purged successfully." });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Failed to delete registration." }, { status: 500 });
+  }
+}
+

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdminOrTrainer } from "@/lib/auth/guards";
+import { requireAdminOrTrainer, requireAdmin } from "@/lib/auth/guards";
 import { connectDB } from "@/lib/db/mongoose";
 import { Enrollment } from "@/lib/models/Enrollment";
 import { StudentProfile } from "@/lib/models/StudentProfile";
@@ -55,8 +55,18 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { session, response } = await requireAdminOrTrainer("editEnrollments");
+  const { session, response } = await requireAdminOrTrainer();
   if (response) return response;
+
+  if (session.role === "trainer") {
+    const canCreate = session.permissions?.createEnrollments || session.permissions?.editEnrollments;
+    if (!canCreate) {
+      return NextResponse.json(
+        { error: "Forbidden: You do not have permission (createEnrollments) to create batch enrollments." },
+        { status: 403 }
+      );
+    }
+  }
 
   try {
     await connectDB();
@@ -182,3 +192,40 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+// STRICT REQUIREMENT: Only Administrators can delete/cancel enrollments. Trainers are strictly prohibited.
+export async function DELETE(req: NextRequest) {
+  const { session, response } = await requireAdmin();
+  if (response) return response;
+
+  try {
+    await connectDB();
+    const searchParams = req.nextUrl.searchParams;
+    const enrollmentId = searchParams.get("id");
+
+    if (!enrollmentId) {
+      return NextResponse.json({ error: "Enrollment ID is required." }, { status: 400 });
+    }
+
+    const enrollment = await Enrollment.findById(enrollmentId);
+    if (!enrollment) {
+      return NextResponse.json({ error: "Enrollment not found." }, { status: 404 });
+    }
+
+    await Enrollment.findByIdAndDelete(enrollmentId);
+
+    await logAudit({
+      action: "ENROLLMENT_DELETED",
+      performedBy: session.name || session.identifier,
+      performedByRole: "admin",
+      targetType: "Enrollment",
+      targetId: enrollmentId,
+      details: { enrollmentNumber: enrollment.enrollmentNumber },
+    });
+
+    return NextResponse.json({ success: true, message: "Enrollment deleted successfully." });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Failed to delete enrollment." }, { status: 500 });
+  }
+}
+
