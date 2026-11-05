@@ -74,6 +74,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Enforce strict portal-to-role matching
+    if (role && ["admin", "trainer", "student"].includes(role)) {
+      if (user.role !== role) {
+        const portalLabels: Record<string, string> = {
+          admin: "Admin Portal",
+          trainer: "Trainer Portal",
+          student: "Student Portal",
+        };
+        const selectedPortal = portalLabels[role] || `${role} portal`;
+        const correctPortal = portalLabels[user.role] || `${user.role} portal`;
+
+        return NextResponse.json(
+          {
+            error: `Access Denied: This is the ${selectedPortal}. Your account has '${user.role.toUpperCase()}' role. Please switch to the ${correctPortal} to sign in.`,
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     // Update last login
     user.lastLogin = new Date();
     await user.save();
