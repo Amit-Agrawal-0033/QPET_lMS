@@ -18,6 +18,14 @@ export async function GET() {
   }
 
   const user = await User.findById(session.userId).select("-passwordHash");
+  if (!user || user.status === "inactive" || (user.status as string) === "suspended") {
+    const { clearSessionCookie } = await import("@/lib/auth/session");
+    await clearSessionCookie();
+    return NextResponse.json(
+      { authenticated: false, error: "Account deactivated or no longer exists." },
+      { status: 401 }
+    );
+  }
 
   return NextResponse.json({
     authenticated: true,

@@ -25,6 +25,20 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden: Cannot access this receipt." }, { status: 403 });
     }
 
+    // Role check: Trainer must have viewReceipts or createReceipts or viewFees permission
+    if (session.role === "trainer") {
+      const canAccess =
+        session.permissions?.viewReceipts ||
+        session.permissions?.createReceipts ||
+        session.permissions?.viewFees;
+      if (!canAccess) {
+        return NextResponse.json(
+          { error: "Forbidden: You do not have permission to view or download fee receipts." },
+          { status: 403 }
+        );
+      }
+    }
+
     const pdfBuffer = generateReceiptPdf({
       receiptNumber: receipt.receiptNumber,
       receiptDate: receipt.receiptDate,

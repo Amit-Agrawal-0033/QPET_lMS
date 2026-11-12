@@ -63,6 +63,14 @@ export async function POST(req: NextRequest) {
 
     const cleanIdentifier = identifier.trim().toLowerCase();
 
+    // Prevent collision or hijacking of reserved admin accounts
+    if (cleanIdentifier === "admin" || cleanIdentifier === "admin077" || cleanIdentifier.startsWith("admin077@")) {
+      return NextResponse.json(
+        { error: "This identifier is reserved for system administration and cannot be used." },
+        { status: 400 }
+      );
+    }
+
     // Check if user already exists
     const existing = await User.findOne({
       $or: [

@@ -23,27 +23,40 @@ export async function POST(req: NextRequest) {
     } = body;
 
     // Validation
-    if (!fullName || !fullName.trim()) {
+    if (!fullName || typeof fullName !== "string" || !fullName.trim()) {
       return NextResponse.json({ error: "Full Name is required." }, { status: 400 });
     }
-    if (!fatherOrGuardianName || !fatherOrGuardianName.trim()) {
+    if (!fatherOrGuardianName || typeof fatherOrGuardianName !== "string" || !fatherOrGuardianName.trim()) {
       return NextResponse.json(
         { error: "Father or Guardian's Name is required." },
         { status: 400 }
       );
     }
-    if (!mobileNumber || !mobileNumber.trim()) {
+    if (!mobileNumber || typeof mobileNumber !== "string" || !mobileNumber.trim()) {
       return NextResponse.json({ error: "Mobile Number is required." }, { status: 400 });
     }
-    if (!address || !address.trim()) {
+    if (!address || typeof address !== "string" || !address.trim()) {
       return NextResponse.json({ error: "Address is required." }, { status: 400 });
     }
-    if (!preferredCourseId) {
+    if (!preferredCourseId || typeof preferredCourseId !== "string") {
       return NextResponse.json({ error: "Please select a course." }, { status: 400 });
     }
 
+    const { isValidObjectId, isValidEmail, isValidMobile, sanitizeString } = await import("@/lib/security/validation");
+
+    if (!isValidObjectId(preferredCourseId)) {
+      return NextResponse.json({ error: "Invalid course identifier." }, { status: 400 });
+    }
+
     const cleanMobile = mobileNumber.trim();
-    const cleanEmail = email && email.trim() ? email.trim().toLowerCase() : undefined;
+    if (!isValidMobile(cleanMobile)) {
+      return NextResponse.json({ error: "Please enter a valid 10-15 digit mobile number." }, { status: 400 });
+    }
+
+    const cleanEmail = email && typeof email === "string" && email.trim() ? email.trim().toLowerCase() : undefined;
+    if (cleanEmail && !isValidEmail(cleanEmail)) {
+      return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
+    }
 
     // Check course existence
     const course = await Course.findById(preferredCourseId);

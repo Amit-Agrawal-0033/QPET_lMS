@@ -6,117 +6,189 @@ const JWT_SECRET = process.env.JWT_SECRET || "qpet_fallback_default_secret_key_3
 const SECRET_KEY = new TextEncoder().encode(JWT_SECRET);
 const COOKIE_NAME = "qpet_session";
 
+function addSecurityHeaders(response: NextResponse) {
+  response.headers.set("X-Frame-Options", "SAMEORIGIN");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  return response;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isApi = pathname.startsWith("/api/");
 
-  // 1. ADMIN ROUTES (/admin/*) - STRICTLY ADMIN ONLY
-  if (pathname.startsWith("/admin")) {
+  // =========================================================================
+  // 1. ADMIN ROUTES (/admin/* & /api/admin/*) - STRICTLY ADMIN ONLY
+  // =========================================================================
+  if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
     const token = request.cookies.get(COOKIE_NAME)?.value;
     if (!token) {
+      if (isApi) {
+        return addSecurityHeaders(
+          NextResponse.json({ error: "Unauthorized: Please log in." }, { status: 401 })
+        );
+      }
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(loginUrl);
+      return addSecurityHeaders(NextResponse.redirect(loginUrl));
     }
 
     try {
       const { payload } = await jwtVerify(token, SECRET_KEY);
       const role = payload.role as string;
 
-      // If user is a trainer, strictly redirect to trainer dashboard
+      if (isApi) {
+        if (role !== "admin") {
+          return addSecurityHeaders(
+            NextResponse.json({ error: "Forbidden: Administrator access required." }, { status: 403 })
+          );
+        }
+        return addSecurityHeaders(NextResponse.next());
+      }
+
+      // Browser dashboard navigation:
       if (role === "trainer") {
-        return NextResponse.redirect(new URL("/trainer/dashboard", request.url));
+        return addSecurityHeaders(NextResponse.redirect(new URL("/trainer/dashboard", request.url)));
       }
 
-      // If user is a student, redirect to student dashboard
       if (role === "student") {
-        return NextResponse.redirect(new URL("/student/dashboard", request.url));
+        return addSecurityHeaders(NextResponse.redirect(new URL("/student/dashboard", request.url)));
       }
 
-      // Only admin can access /admin
       if (role !== "admin") {
-        return NextResponse.redirect(new URL("/login?error=admin_required", request.url));
+        return addSecurityHeaders(NextResponse.redirect(new URL("/login?error=admin_required", request.url)));
       }
 
-      // Direct /admin or /admin/ to /admin/dashboard
       if (pathname === "/admin" || pathname === "/admin/") {
-        return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+        return addSecurityHeaders(NextResponse.redirect(new URL("/admin/dashboard", request.url)));
       }
     } catch {
-      return NextResponse.redirect(new URL("/login?error=invalid_session", request.url));
+      if (isApi) {
+        return addSecurityHeaders(
+          NextResponse.json({ error: "Unauthorized: Invalid or expired session." }, { status: 401 })
+        );
+      }
+      return addSecurityHeaders(NextResponse.redirect(new URL("/login?error=invalid_session", request.url)));
     }
   }
 
-  // 2. TRAINER ROUTES (/trainer/*) - TRAINER & ADMIN
-  if (pathname.startsWith("/trainer")) {
+  // =========================================================================
+  // 2. TRAINER ROUTES (/trainer/* & /api/trainer/*) - TRAINER & ADMIN ONLY
+  // =========================================================================
+  if (pathname.startsWith("/trainer") || pathname.startsWith("/api/trainer")) {
     const token = request.cookies.get(COOKIE_NAME)?.value;
     if (!token) {
+      if (isApi) {
+        return addSecurityHeaders(
+          NextResponse.json({ error: "Unauthorized: Please log in." }, { status: 401 })
+        );
+      }
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(loginUrl);
+      return addSecurityHeaders(NextResponse.redirect(loginUrl));
     }
 
     try {
       const { payload } = await jwtVerify(token, SECRET_KEY);
       const role = payload.role as string;
 
-      // If student, redirect to student dashboard
+      if (isApi) {
+        if (role !== "trainer" && role !== "admin") {
+          return addSecurityHeaders(
+            NextResponse.json({ error: "Forbidden: Trainer or Admin access required." }, { status: 403 })
+          );
+        }
+        return addSecurityHeaders(NextResponse.next());
+      }
+
+      // Browser dashboard navigation:
       if (role === "student") {
-        return NextResponse.redirect(new URL("/student/dashboard", request.url));
+        return addSecurityHeaders(NextResponse.redirect(new URL("/student/dashboard", request.url)));
       }
 
-      // Only trainer and admin can access trainer portal
       if (role !== "trainer" && role !== "admin") {
-        return NextResponse.redirect(new URL("/login?error=trainer_required", request.url));
+        return addSecurityHeaders(NextResponse.redirect(new URL("/login?error=trainer_required", request.url)));
       }
 
-      // Direct /trainer or /trainer/ to /trainer/dashboard
       if (pathname === "/trainer" || pathname === "/trainer/") {
-        return NextResponse.redirect(new URL("/trainer/dashboard", request.url));
+        return addSecurityHeaders(NextResponse.redirect(new URL("/trainer/dashboard", request.url)));
       }
     } catch {
-      return NextResponse.redirect(new URL("/login?error=invalid_session", request.url));
+      if (isApi) {
+        return addSecurityHeaders(
+          NextResponse.json({ error: "Unauthorized: Invalid or expired session." }, { status: 401 })
+        );
+      }
+      return addSecurityHeaders(NextResponse.redirect(new URL("/login?error=invalid_session", request.url)));
     }
   }
 
-  // 3. STUDENT ROUTES (/student/*) - STUDENT ONLY
-  if (pathname.startsWith("/student")) {
+  // =========================================================================
+  // 3. STUDENT ROUTES (/student/* & /api/student/*) - STUDENT ONLY
+  // =========================================================================
+  if (pathname.startsWith("/student") || pathname.startsWith("/api/student")) {
     const token = request.cookies.get(COOKIE_NAME)?.value;
     if (!token) {
+      if (isApi) {
+        return addSecurityHeaders(
+          NextResponse.json({ error: "Unauthorized: Please log in." }, { status: 401 })
+        );
+      }
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(loginUrl);
+      return addSecurityHeaders(NextResponse.redirect(loginUrl));
     }
 
     try {
       const { payload } = await jwtVerify(token, SECRET_KEY);
       const role = payload.role as string;
 
-      // If admin, redirect to admin dashboard
-      if (role === "admin") {
-        return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+      if (isApi) {
+        if (role !== "student") {
+          return addSecurityHeaders(
+            NextResponse.json({ error: "Forbidden: Student access required." }, { status: 403 })
+          );
+        }
+        return addSecurityHeaders(NextResponse.next());
       }
 
-      // If trainer, redirect to trainer dashboard
+      // Browser dashboard navigation:
+      if (role === "admin") {
+        return addSecurityHeaders(NextResponse.redirect(new URL("/admin/dashboard", request.url)));
+      }
+
       if (role === "trainer") {
-        return NextResponse.redirect(new URL("/trainer/dashboard", request.url));
+        return addSecurityHeaders(NextResponse.redirect(new URL("/trainer/dashboard", request.url)));
       }
 
       if (role !== "student") {
-        return NextResponse.redirect(new URL("/login?error=student_required", request.url));
+        return addSecurityHeaders(NextResponse.redirect(new URL("/login?error=student_required", request.url)));
       }
 
-      // Direct /student or /student/ to /student/dashboard
       if (pathname === "/student" || pathname === "/student/") {
-        return NextResponse.redirect(new URL("/student/dashboard", request.url));
+        return addSecurityHeaders(NextResponse.redirect(new URL("/student/dashboard", request.url)));
       }
     } catch {
-      return NextResponse.redirect(new URL("/login?error=invalid_session", request.url));
+      if (isApi) {
+        return addSecurityHeaders(
+          NextResponse.json({ error: "Unauthorized: Invalid or expired session." }, { status: 401 })
+        );
+      }
+      return addSecurityHeaders(NextResponse.redirect(new URL("/login?error=invalid_session", request.url)));
     }
   }
 
-  return NextResponse.next();
+  return addSecurityHeaders(NextResponse.next());
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/trainer/:path*", "/student/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/api/admin/:path*",
+    "/trainer/:path*",
+    "/api/trainer/:path*",
+    "/student/:path*",
+    "/api/student/:path*",
+  ],
 };
