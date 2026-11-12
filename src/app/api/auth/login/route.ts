@@ -19,19 +19,33 @@ export async function POST(req: NextRequest) {
     }
 
     const cleanIdentifier = String(identifier).trim();
+    const cleanLower = cleanIdentifier.toLowerCase();
     const domainAppended = cleanIdentifier.includes("@")
-      ? cleanIdentifier.toLowerCase()
-      : `${cleanIdentifier.toLowerCase()}@qpet.in`;
+      ? cleanLower
+      : `${cleanLower}@qpet.in`;
 
-    // Query user by identifier, email, or mobile number
+    const isAdminAlias =
+      cleanLower === "admin" ||
+      cleanLower === "admin077" ||
+      cleanLower === "admin@qpet.in" ||
+      cleanLower === "admin077@qpet.in";
+
+    // Query user by identifier, email, or mobile number (including admin aliases)
     const user = await User.findOne({
       $or: [
         { identifier: cleanIdentifier },
-        { identifier: cleanIdentifier.toLowerCase() },
+        { identifier: cleanLower },
         { identifier: domainAppended },
-        { email: cleanIdentifier.toLowerCase() },
+        { email: cleanLower },
         { email: domainAppended },
         { mobileNumber: cleanIdentifier },
+        ...(isAdminAlias
+          ? [
+              { role: "admin" },
+              { identifier: "admin077@qpet.in" },
+              { email: "admin077@qpet.in" },
+            ]
+          : []),
       ],
     });
 
