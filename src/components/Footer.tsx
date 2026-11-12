@@ -210,11 +210,21 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-[#D4FF3F] shrink-0" />
-                <span className="text-purple-200 font-mono">+91 98765 43210</span>
+                <a
+                  href="tel:18002021511"
+                  className="text-purple-200 font-mono hover:text-white transition-colors"
+                >
+                  18002021511
+                </a>
               </li>
               <li className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-[#D4FF3F] shrink-0" />
-                <span className="text-purple-200">support@qpet.org</span>
+                <a
+                  href="mailto:info@qpet.in"
+                  className="text-purple-200 hover:text-white transition-colors"
+                >
+                  info@qpet.in
+                </a>
               </li>
               <li className="pt-1">
                 <div className="px-3 py-1.5 rounded-xl bg-purple-950/80 border border-purple-800 text-[11px] text-purple-300 flex items-center gap-1.5">
