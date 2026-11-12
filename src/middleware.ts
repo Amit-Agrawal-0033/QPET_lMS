@@ -42,9 +42,26 @@ export async function middleware(request: NextRequest) {
       const role = payload.role as string;
 
       if (isApi) {
-        if (role !== "admin") {
+        // Master Admin-only API endpoints:
+        const isStrictAdminApi =
+          pathname.startsWith("/api/admin/trainers") ||
+          pathname.startsWith("/api/admin/audit-logs") ||
+          pathname.startsWith("/api/admin/dashboard");
+
+        if (isStrictAdminApi) {
+          if (role !== "admin") {
+            return addSecurityHeaders(
+              NextResponse.json({ error: "Forbidden: Administrator access required." }, { status: 403 })
+            );
+          }
+          return addSecurityHeaders(NextResponse.next());
+        }
+
+        // Shared operational APIs (students, courses, enrollments, registrations, certificates, fees, receipts, installments, reports):
+        // Allow Admins and Faculty Trainers to proceed to granular route-level RBAC enforcement
+        if (role !== "admin" && role !== "trainer") {
           return addSecurityHeaders(
-            NextResponse.json({ error: "Forbidden: Administrator access required." }, { status: 403 })
+            NextResponse.json({ error: "Forbidden: Administrative or Faculty Trainer access required." }, { status: 403 })
           );
         }
         return addSecurityHeaders(NextResponse.next());
