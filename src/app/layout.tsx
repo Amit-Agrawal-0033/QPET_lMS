@@ -14,6 +14,33 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                window.addEventListener('error', function(e) {
+                  var msg = (e && e.message) || '';
+                  var isChunkError =
+                    msg.indexOf('Loading chunk') !== -1 ||
+                    msg.indexOf('ChunkLoadError') !== -1 ||
+                    msg.indexOf('Failed to fetch dynamically imported module') !== -1 ||
+                    (e && e.target && e.target.tagName === 'SCRIPT' && e.target.src && e.target.src.indexOf('/_next/static/') !== -1);
+                  if (isChunkError) {
+                    var key = 'qpet_chunk_reload_ts';
+                    var last = sessionStorage.getItem(key);
+                    var now = Date.now();
+                    if (!last || now - Number(last) > 10000) {
+                      sessionStorage.setItem(key, String(now));
+                      window.location.reload();
+                    }
+                  }
+                }, true);
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-teal-500 selection:text-white">
         {children}
       </body>

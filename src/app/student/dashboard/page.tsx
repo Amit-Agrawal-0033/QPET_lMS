@@ -28,6 +28,7 @@ import {
 export default function StudentDashboardPage() {
   const [data, setData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboard();
@@ -36,17 +37,23 @@ export default function StudentDashboardPage() {
   const fetchDashboard = async () => {
     try {
       setLoading(true);
+      setErrorMsg(null);
       const res = await fetch("/api/student/dashboard");
       const json = await res.json();
-      if (json.success) setData(json);
-    } catch (err) {
+      if (json.success) {
+        setData(json);
+      } else {
+        setErrorMsg(json.error || "Failed to load student dashboard.");
+      }
+    } catch (err: any) {
       console.error(err);
+      setErrorMsg("Network error: Could not reach server.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading || !data) {
+  if (loading) {
     return (
       <div className="space-y-6">
         <div className="h-10 w-64 bg-slate-200 rounded-xl animate-pulse" />
@@ -63,7 +70,28 @@ export default function StudentDashboardPage() {
     );
   }
 
-  const { profile, summary, enrollments, receipts, certificates, installments } = data;
+  if (!data) {
+    return (
+      <div className="p-8 max-w-lg mx-auto bg-white rounded-2xl border border-slate-200/80 shadow-xs text-center my-8">
+        <AlertCircle className="w-10 h-10 text-orange-500 mx-auto mb-3" />
+        <h2 className="text-base font-bold text-slate-900 mb-1">Failed to load student portal</h2>
+        <p className="text-xs text-slate-500 mb-4">{errorMsg || "Unable to retrieve student profile. Please try again."}</p>
+        <button
+          onClick={fetchDashboard}
+          className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-sm cursor-pointer transition-all"
+        >
+          Retry Loading
+        </button>
+      </div>
+    );
+  }
+
+  const profile = data.profile || {};
+  const summary = data.summary || { totalFees: 0, paidFees: 0, outstandingBalance: 0 };
+  const enrollments = Array.isArray(data.enrollments) ? data.enrollments : [];
+  const receipts = Array.isArray(data.receipts) ? data.receipts : [];
+  const certificates = Array.isArray(data.certificates) ? data.certificates : [];
+  const installments = Array.isArray(data.installments) ? data.installments : [];
 
   // Chart calculations
   const totalFees = summary.totalFees || 0;

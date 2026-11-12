@@ -40,6 +40,7 @@ interface DashboardData {
 export default function AdminDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboard();
@@ -48,19 +49,23 @@ export default function AdminDashboardPage() {
   const fetchDashboard = async () => {
     try {
       setLoading(true);
+      setErrorMsg(null);
       const res = await fetch("/api/admin/dashboard");
       const json = await res.json();
       if (json.success) {
         setData(json);
+      } else {
+        setErrorMsg(json.error || "Failed to load administrative dashboard.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Dashboard fetch error:", err);
+      setErrorMsg("Network error: Could not reach server.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading || !data) {
+  if (loading) {
     return (
       <div className="space-y-6">
         <div className="h-10 w-64 bg-slate-200/80 rounded-xl animate-pulse" />
@@ -73,7 +78,36 @@ export default function AdminDashboardPage() {
     );
   }
 
-  const { stats, recentRegistrations, recentPayments, recentEnrollments } = data;
+  if (!data) {
+    return (
+      <div className="p-8 max-w-lg mx-auto bg-white rounded-2xl border border-slate-200/80 shadow-xs text-center my-8">
+        <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-3" />
+        <h2 className="text-base font-bold text-slate-900 mb-1">Failed to load admin dashboard</h2>
+        <p className="text-xs text-slate-500 mb-4">{errorMsg || "Unable to retrieve dashboard metrics. Please try again."}</p>
+        <button
+          onClick={fetchDashboard}
+          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm cursor-pointer transition-all"
+        >
+          Retry Loading
+        </button>
+      </div>
+    );
+  }
+
+  const stats = data.stats || {
+    totalStudents: 0,
+    activeEnrollments: 0,
+    totalCourses: 0,
+    pendingRegistrations: 0,
+    totalFeesPayable: 0,
+    totalFeesCollected: 0,
+    outstandingFees: 0,
+    installmentsDue: 0,
+    certificatesIssued: 0,
+  };
+  const recentRegistrations = Array.isArray(data.recentRegistrations) ? data.recentRegistrations : [];
+  const recentPayments = Array.isArray(data.recentPayments) ? data.recentPayments : [];
+  const recentEnrollments = Array.isArray(data.recentEnrollments) ? data.recentEnrollments : [];
 
   // Realization & percentage calculations for charts
   const collectionRate =

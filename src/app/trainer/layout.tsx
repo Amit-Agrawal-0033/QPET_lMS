@@ -61,6 +61,8 @@ export default function TrainerLayout({ children }: { children: React.ReactNode 
             return;
           }
           setCurrentUser(data.user);
+        } else {
+          window.location.href = "/login";
         }
       })
       .catch(() => {})
@@ -158,8 +160,7 @@ export default function TrainerLayout({ children }: { children: React.ReactNode 
             </p>
             {trainerNav
               .filter((item) => {
-                if (loadingUser) return false;
-                if (!currentUser) return false;
+                if (!currentUser) return true; // optimistic while fetching
                 if (currentUser.role === "admin") return true;
                 if (!item.requiredPerm) return true;
                 return !!currentUser.permissions?.[item.requiredPerm];

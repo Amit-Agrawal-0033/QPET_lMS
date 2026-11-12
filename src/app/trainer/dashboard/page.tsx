@@ -44,6 +44,7 @@ interface TrainerDashboardData {
 export default function TrainerDashboardPage() {
   const [data, setData] = useState<TrainerDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboard();
@@ -52,19 +53,23 @@ export default function TrainerDashboardPage() {
   const fetchDashboard = async () => {
     try {
       setLoading(true);
+      setErrorMsg(null);
       const res = await fetch("/api/trainer/dashboard");
       const json = await res.json();
       if (json.success) {
         setData(json);
+      } else {
+        setErrorMsg(json.error || "Failed to load faculty dashboard data.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Trainer dashboard fetch error:", err);
+      setErrorMsg("Network error: Could not reach the server.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading || !data) {
+  if (loading) {
     return (
       <div className="space-y-6">
         <div className="h-28 bg-purple-100/50 rounded-2xl animate-pulse" />
@@ -77,7 +82,35 @@ export default function TrainerDashboardPage() {
     );
   }
 
-  const { trainer, stats, recentEnrollments } = data;
+  if (!data) {
+    return (
+      <div className="p-8 max-w-lg mx-auto bg-white rounded-2xl border border-slate-200/80 shadow-xs text-center my-8">
+        <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-3" />
+        <h2 className="text-base font-bold text-slate-900 mb-1">Failed to load dashboard</h2>
+        <p className="text-xs text-slate-500 mb-4">{errorMsg || "Unable to retrieve faculty dashboard data. Please try again."}</p>
+        <button
+          onClick={fetchDashboard}
+          className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-sm cursor-pointer transition-all"
+        >
+          Retry Loading
+        </button>
+      </div>
+    );
+  }
+
+  const trainer = data.trainer || {
+    name: "Faculty Trainer",
+    identifier: "Trainer",
+    role: "trainer",
+    permissions: {},
+  };
+  const stats = data.stats || {
+    totalStudents: 0,
+    activeEnrollments: 0,
+    totalCourses: 0,
+    certificatesIssued: 0,
+  };
+  const recentEnrollments = Array.isArray(data.recentEnrollments) ? data.recentEnrollments : [];
   const perms = trainer.permissions || {};
 
   const kpis = [

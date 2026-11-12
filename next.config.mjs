@@ -33,6 +33,23 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: "/:path(admin.*|trainer.*|student.*|login|api.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "private, no-cache, no-store, max-age=0, must-revalidate",
+          },
+          {
+            key: "Pragma",
+            value: "no-cache",
+          },
+          {
+            key: "Expires",
+            value: "0",
+          },
+        ],
+      },
     ];
   },
 };
