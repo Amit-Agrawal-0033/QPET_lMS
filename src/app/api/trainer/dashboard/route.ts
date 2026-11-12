@@ -67,7 +67,10 @@ export async function GET() {
         studentEmail: en.studentId?.email || "N/A",
         courseTitle: en.courseId?.title || "Course",
         courseCode: en.courseId?.code || "N/A",
-        duration: en.courseId?.durationMonths ? `${en.courseId.durationMonths} Months` : "N/A",
+        duration:
+          en.durationSnapshot ||
+          en.courseId?.durationText ||
+          (en.courseId?.durationMonths ? `${en.courseId.durationMonths} Months` : "N/A"),
         enrolledAt: en.enrolledAt || en.createdAt,
       })),
     });

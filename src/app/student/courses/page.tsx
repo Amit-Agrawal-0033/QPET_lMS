@@ -72,7 +72,7 @@ export default function StudentCoursesPage() {
                   </span>
                   <h2 className="text-lg font-bold text-slate-900">{enr.courseNameSnapshot}</h2>
                   <p className="text-xs text-slate-500 mt-1">
-                    Duration: <strong className="text-slate-800 font-medium">{enr.durationMonthsSnapshot} Months</strong>
+                    Duration: <strong className="text-slate-800 font-medium">{enr.durationSnapshot || `${enr.durationMonthsSnapshot} Months`}</strong>
                   </p>
                 </div>
 

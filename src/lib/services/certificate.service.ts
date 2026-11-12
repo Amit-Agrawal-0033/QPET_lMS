@@ -69,9 +69,13 @@ export async function issueCertificate(input: IssueCertificateInput): Promise<IC
     studentName: student.fullName,
     enrollmentNumber: enrollment.enrollmentNumber,
     courseName: enrollment.courseNameSnapshot,
-    courseDuration: `${enrollment.durationMonthsSnapshot} ${
-      enrollment.durationMonthsSnapshot === 1 ? "Month" : "Months"
-    }`,
+    courseDuration:
+      enrollment.durationSnapshot ||
+      (enrollment.durationUnitSnapshot === "days"
+        ? `${enrollment.durationValueSnapshot || enrollment.durationMonthsSnapshot} Days`
+        : `${enrollment.durationMonthsSnapshot || 1} ${
+            (enrollment.durationMonthsSnapshot || 1) === 1 ? "Month" : "Months"
+          }`),
     issueDate: issueDate || new Date(),
     status: "issued",
     grade: grade?.trim() || "A",

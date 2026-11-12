@@ -38,6 +38,8 @@ export default function TrainerCoursesPage() {
     code: "",
     title: "",
     description: "",
+    durationValue: 3,
+    durationUnit: "months" as "months" | "days",
     durationMonths: 3,
     defaultFee: 3000,
     isActive: true,
@@ -89,6 +91,8 @@ export default function TrainerCoursesPage() {
       code: "",
       title: "",
       description: "",
+      durationValue: 3,
+      durationUnit: "months",
       durationMonths: 3,
       defaultFee: 3000,
       isActive: true,
@@ -99,11 +103,15 @@ export default function TrainerCoursesPage() {
 
   const openEditModal = (course: any) => {
     setEditingCourse(course);
+    const unit: "months" | "days" = course.durationUnit === "days" ? "days" : "months";
+    const val = Number(course.durationValue || course.durationMonths || 1);
     setFormData({
       code: course.code,
       title: course.title,
       description: course.description || "",
-      durationMonths: course.durationMonths,
+      durationValue: val,
+      durationUnit: unit,
+      durationMonths: unit === "months" ? val : Math.max(1, Math.round(val / 30)),
       defaultFee: course.defaultFee,
       isActive: course.isActive !== false,
     });
@@ -260,8 +268,10 @@ export default function TrainerCoursesPage() {
               <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
                 <span className="flex items-center gap-1.5 font-medium">
                   <Clock className="w-3.5 h-3.5 text-slate-400" />
-                  {course.durationMonths}{" "}
-                  {course.durationMonths === 1 ? "Month" : "Months"}
+                  {course.durationText ||
+                    (course.durationUnit === "days"
+                      ? `${course.durationValue || course.durationMonths} Days`
+                      : `${course.durationMonths} ${course.durationMonths === 1 ? "Month" : "Months"}`)}
                 </span>
                 <span className="flex items-center gap-1.5 font-semibold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg">
                   <Users className="w-3.5 h-3.5 text-purple-600" />
@@ -328,23 +338,86 @@ export default function TrainerCoursesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Duration (Months) *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min={1}
-                    max={48}
-                    value={formData.durationMonths}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        durationMonths: Number(e.target.value),
-                      })
-                    }
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none"
-                  />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-slate-700">
+                      Duration *
+                    </label>
+                    <span className="text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200/80 px-2 py-0.5 rounded-md">
+                      {formData.durationValue}{" "}
+                      {formData.durationUnit === "days"
+                        ? formData.durationValue === 1 ? "Day" : "Days"
+                        : formData.durationValue === 1 ? "Month" : "Months"}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      max={formData.durationUnit === "days" ? 365 : 48}
+                      value={formData.durationValue}
+                      onChange={(e) => {
+                        const val = Math.max(1, Number(e.target.value));
+                        setFormData({
+                          ...formData,
+                          durationValue: val,
+                          durationMonths: formData.durationUnit === "months" ? val : Math.max(1, Math.round(val / 30)),
+                        });
+                      }}
+                      placeholder={formData.durationUnit === "days" ? "e.g. 7, 15, 45" : "e.g. 1, 2, 6"}
+                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none"
+                    />
+                    <select
+                      value={formData.durationUnit}
+                      onChange={(e) => {
+                        const newUnit = e.target.value as "months" | "days";
+                        setFormData({
+                          ...formData,
+                          durationUnit: newUnit,
+                          durationValue: newUnit === "days" && formData.durationValue <= 3 ? 15 : formData.durationValue,
+                          durationMonths: newUnit === "months" ? formData.durationValue : Math.max(1, Math.round(formData.durationValue / 30)),
+                        });
+                      }}
+                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none bg-white font-semibold cursor-pointer"
+                    >
+                      <option value="months">Months (महीने)</option>
+                      <option value="days">Days (दिन)</option>
+                    </select>
+                  </div>
+
+                  {/* Quick presets */}
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                    <span className="text-[10px] text-slate-400 font-medium">Quick:</span>
+                    {[
+                      { val: 7, unit: "days", label: "7 Days" },
+                      { val: 15, unit: "days", label: "15 Days" },
+                      { val: 30, unit: "days", label: "30 Days" },
+                      { val: 1, unit: "months", label: "1M" },
+                      { val: 2, unit: "months", label: "2M" },
+                      { val: 3, unit: "months", label: "3M" },
+                      { val: 6, unit: "months", label: "6M" },
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            durationValue: preset.val,
+                            durationUnit: preset.unit as "months" | "days",
+                            durationMonths: preset.unit === "months" ? preset.val : Math.max(1, Math.round(preset.val / 30)),
+                          })
+                        }
+                        className={`text-[10px] px-2 py-0.5 rounded-md font-semibold transition-colors ${
+                          formData.durationValue === preset.val && formData.durationUnit === preset.unit
+                            ? "bg-purple-600 text-white shadow-xs"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 

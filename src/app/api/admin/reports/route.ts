@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
         e.studentId?.mobileNumber || "N/A",
         e.courseNameSnapshot,
         new Date(e.enrollmentDate).toLocaleDateString("en-IN"),
-        `${e.durationMonthsSnapshot} Months`,
+        e.durationSnapshot || `${e.durationMonthsSnapshot} Months`,
         e.totalFee,
         e.paidAmount,
         e.outstandingBalance,

@@ -6,6 +6,9 @@ export interface IEnrollment extends Document {
   courseId: mongoose.Types.ObjectId;
   courseNameSnapshot: string;
   durationMonthsSnapshot: number;
+  durationSnapshot?: string;
+  durationUnitSnapshot?: "months" | "days";
+  durationValueSnapshot?: number;
   agreedFeeSnapshot: number;
   enrollmentDate: Date;
   expectedCompletionDate?: Date;
@@ -50,6 +53,20 @@ const EnrollmentSchema = new Schema<IEnrollment>(
     durationMonthsSnapshot: {
       type: Number,
       required: true,
+      default: 1,
+    },
+    durationSnapshot: {
+      type: String,
+      default: "",
+    },
+    durationUnitSnapshot: {
+      type: String,
+      enum: ["months", "days"],
+      default: "months",
+    },
+    durationValueSnapshot: {
+      type: Number,
+      default: 1,
     },
     agreedFeeSnapshot: {
       type: Number,

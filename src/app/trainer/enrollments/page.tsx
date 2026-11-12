@@ -247,7 +247,7 @@ export default function TrainerEnrollmentsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400">Duration:</span>
-                    <span>{en.durationMonthsSnapshot || 3} Months</span>
+                    <span>{en.durationSnapshot || `${en.durationMonthsSnapshot || 3} Months`}</span>
                   </div>
                 </div>
               </div>

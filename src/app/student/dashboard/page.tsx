@@ -461,7 +461,7 @@ export default function StudentDashboardPage() {
                     </span>
                     <h3 className="text-base font-bold text-slate-900">{enr.courseNameSnapshot}</h3>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Duration: {enr.durationMonthsSnapshot} Months • Mode: {enr.paymentType === "installment" ? "Installment Plan" : "Full Payment"}
+                      Duration: {enr.durationSnapshot || `${enr.durationMonthsSnapshot} Months`} • Mode: {enr.paymentType === "installment" ? "Installment Plan" : "Full Payment"}
                     </p>
                   </div>
                   <span

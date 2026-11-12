@@ -50,9 +50,10 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
     const body = await req.json();
-    const { code, title, description, durationMonths, defaultFee, isActive } = body;
+    const { code, title, description, durationValue, durationUnit, durationMonths, defaultFee, isActive } = body;
 
-    if (!code || !title || durationMonths === undefined || defaultFee === undefined) {
+    const rawDuration = durationValue !== undefined ? durationValue : durationMonths;
+    if (!code || !title || rawDuration === undefined || defaultFee === undefined) {
       return NextResponse.json(
         { error: "Course Code, Title, Duration, and Default Fee are required." },
         { status: 400 }
@@ -65,22 +66,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Course code already exists." }, { status: 409 });
     }
 
-    const durationNum = Number(durationMonths);
+    const unit: "months" | "days" = durationUnit === "days" ? "days" : "months";
+    const val = Number(rawDuration);
     const feeNum = Number(defaultFee);
 
-    if (durationNum <= 0 || feeNum < 0) {
+    if (val <= 0 || feeNum < 0) {
       return NextResponse.json(
         { error: "Duration must be > 0 and Default Fee cannot be negative." },
         { status: 400 }
       );
     }
 
+    const text = unit === "days"
+      ? `${val} ${val === 1 ? "Day" : "Days"}`
+      : `${val} ${val === 1 ? "Month" : "Months"}`;
+    const monthsEquiv = unit === "days" ? Math.max(1, Math.round(val / 30)) : val;
+
     const course = new Course({
       code: cleanCode,
       title: title.trim(),
       description: description?.trim() || "",
-      durationMonths: durationNum,
-      durationText: `${durationNum} ${durationNum === 1 ? "Month" : "Months"}`,
+      durationValue: val,
+      durationUnit: unit,
+      durationMonths: monthsEquiv,
+      durationText: text,
       defaultFee: feeNum,
       isActive: isActive !== undefined ? Boolean(isActive) : true,
     });
@@ -93,7 +102,7 @@ export async function POST(req: NextRequest) {
       performedByRole: session.role,
       targetType: "Course",
       targetId: course._id.toString(),
-      details: { code: course.code, title: course.title, fee: course.defaultFee },
+      details: { code: course.code, title: course.title, fee: course.defaultFee, duration: text },
     });
 
     return NextResponse.json({ success: true, course }, { status: 201 });
@@ -109,7 +118,7 @@ export async function PUT(req: NextRequest) {
   try {
     await connectDB();
     const body = await req.json();
-    const { id, title, description, durationMonths, defaultFee, isActive } = body;
+    const { id, title, description, durationValue, durationUnit, durationMonths, defaultFee, isActive } = body;
 
     if (!id) {
       return NextResponse.json({ error: "Course ID is required." }, { status: 400 });
@@ -122,10 +131,19 @@ export async function PUT(req: NextRequest) {
 
     if (title) course.title = title.trim();
     if (description !== undefined) course.description = description.trim();
-    if (durationMonths !== undefined) {
-      const dur = Number(durationMonths);
-      course.durationMonths = dur;
-      course.durationText = `${dur} ${dur === 1 ? "Month" : "Months"}`;
+    if (durationValue !== undefined || durationMonths !== undefined || durationUnit !== undefined) {
+      const unit: "months" | "days" =
+        (durationUnit || course.durationUnit || "months") === "days" ? "days" : "months";
+      const rawVal = durationValue !== undefined ? durationValue : (durationMonths !== undefined ? durationMonths : (course.durationValue || course.durationMonths || 1));
+      const val = Number(rawVal);
+      if (val > 0) {
+        course.durationValue = val;
+        course.durationUnit = unit;
+        course.durationMonths = unit === "days" ? Math.max(1, Math.round(val / 30)) : val;
+        course.durationText = unit === "days"
+          ? `${val} ${val === 1 ? "Day" : "Days"}`
+          : `${val} ${val === 1 ? "Month" : "Months"}`;
+      }
     }
     if (defaultFee !== undefined) course.defaultFee = Number(defaultFee);
     if (isActive !== undefined) course.isActive = Boolean(isActive);

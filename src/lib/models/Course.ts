@@ -4,8 +4,10 @@ export interface ICourse extends Document {
   code: string;
   title: string;
   description: string;
+  durationValue: number;
+  durationUnit: "months" | "days";
   durationMonths: number;
-  durationText?: string;
+  durationText: string;
   defaultFee: number;
   isActive: boolean;
   createdAt: Date;
@@ -32,13 +34,24 @@ const CourseSchema = new Schema<ICourse>(
       type: String,
       default: "",
     },
-    durationMonths: {
+    durationValue: {
       type: Number,
       required: true,
       min: 1,
+      default: 1,
+    },
+    durationUnit: {
+      type: String,
+      enum: ["months", "days"],
+      default: "months",
+    },
+    durationMonths: {
+      type: Number,
+      default: 1,
     },
     durationText: {
       type: String,
+      default: "",
     },
     defaultFee: {
       type: Number,

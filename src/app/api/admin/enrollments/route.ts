@@ -120,14 +120,29 @@ export async function POST(req: NextRequest) {
 
     const enrollmentDate = new Date();
     const expectedCompletion = new Date(enrollmentDate);
-    expectedCompletion.setMonth(expectedCompletion.getMonth() + course.durationMonths);
+    const durationUnit = course.durationUnit || "months";
+    const durationVal = course.durationValue || course.durationMonths || 1;
+    if (durationUnit === "days") {
+      expectedCompletion.setDate(expectedCompletion.getDate() + durationVal);
+    } else {
+      expectedCompletion.setMonth(expectedCompletion.getMonth() + durationVal);
+    }
+
+    const durationText =
+      course.durationText ||
+      (durationUnit === "days"
+        ? `${durationVal} ${durationVal === 1 ? "Day" : "Days"}`
+        : `${durationVal} ${durationVal === 1 ? "Month" : "Months"}`);
 
     const enrollment = new Enrollment({
       enrollmentNumber,
       studentId: student._id,
       courseId: course._id,
       courseNameSnapshot: course.title,
-      durationMonthsSnapshot: course.durationMonths,
+      durationMonthsSnapshot: course.durationMonths || 1,
+      durationSnapshot: durationText,
+      durationUnitSnapshot: durationUnit,
+      durationValueSnapshot: durationVal,
       agreedFeeSnapshot: agreedFee,
       enrollmentDate,
       expectedCompletionDate: expectedCompletion,

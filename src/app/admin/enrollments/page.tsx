@@ -248,7 +248,7 @@ export default function AdminEnrollmentsPage() {
                     <td className="py-3.5 px-4">
                       <p className="font-semibold text-slate-800">{enr.courseNameSnapshot}</p>
                       <span className="text-[11px] text-slate-500">
-                        {enr.durationMonthsSnapshot} Months duration
+                        {enr.durationSnapshot || `${enr.durationMonthsSnapshot} Months`}
                       </span>
                     </td>
 

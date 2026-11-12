@@ -279,7 +279,7 @@ export default function AdminRegistrationsPage() {
                     <span className="truncate">{reg.preferredCourseId?.title || "Not selected"}</span>
                   </div>
                   <span className="text-[11px] text-slate-500 block">
-                    Default Fee: <strong className="text-slate-700 font-medium">₹{reg.preferredCourseId?.defaultFee || 0}</strong> ({reg.preferredCourseId?.durationMonths || 1} Months)
+                    Default Fee: <strong className="text-slate-700 font-medium">₹{reg.preferredCourseId?.defaultFee || 0}</strong> ({reg.preferredCourseId?.durationText || `${reg.preferredCourseId?.durationMonths || 1} Months`})
                   </span>
                 </div>
 
