@@ -13,6 +13,11 @@ import {
   CheckCircle2,
   AlertCircle,
   ShieldAlert,
+  CreditCard,
+  Receipt,
+  IndianRupee,
+  Clock,
+  FileSpreadsheet,
 } from "lucide-react";
 
 interface TrainerDashboardData {
@@ -27,6 +32,9 @@ interface TrainerDashboardData {
     activeEnrollments: number;
     totalCourses: number;
     certificatesIssued: number;
+    totalFeesCollected?: number;
+    totalOutstanding?: number;
+    totalPaymentsCount?: number;
   };
   recentEnrollments: {
     _id: string;
@@ -109,6 +117,9 @@ export default function TrainerDashboardPage() {
     activeEnrollments: 0,
     totalCourses: 0,
     certificatesIssued: 0,
+    totalFeesCollected: 0,
+    totalOutstanding: 0,
+    totalPaymentsCount: 0,
   };
   const recentEnrollments = Array.isArray(data.recentEnrollments) ? data.recentEnrollments : [];
   const perms = trainer.permissions || {};
@@ -170,6 +181,30 @@ export default function TrainerDashboardPage() {
           },
         ]
       : []),
+    ...(perms.viewFees
+      ? [
+          {
+            label: "Fees Collected",
+            value: `₹${(stats.totalFeesCollected || 0).toLocaleString("en-IN")}`,
+            subtext: `${stats.totalPaymentsCount || 0} Transactions`,
+            icon: IndianRupee,
+            color: "text-emerald-600",
+            bg: "bg-emerald-50",
+            border: "border-emerald-200/60",
+            link: "/trainer/fees",
+          },
+          {
+            label: "Outstanding Dues",
+            value: `₹${(stats.totalOutstanding || 0).toLocaleString("en-IN")}`,
+            subtext: "Pending Balances",
+            icon: Clock,
+            color: "text-amber-600",
+            bg: "bg-amber-50",
+            border: "border-amber-200/60",
+            link: "/trainer/fees",
+          },
+        ]
+      : []),
   ];
 
   const hasAnyPermission = Object.values(perms).some(Boolean);
@@ -189,11 +224,29 @@ export default function TrainerDashboardPage() {
               Welcome back, {trainer.name}! 👋
             </h1>
             <p className="text-sm text-purple-100/90 mt-1.5 max-w-xl">
-              Access your student batches, course curriculum, and verify candidate certificates. All training operations are synced with the live LMS.
+              Access student batches, curriculum, fee collections, and verify candidate certificates. All operations sync live with the LMS.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            {(perms.createFees || perms.editFees) && (
+              <Link
+                href="/trainer/fees"
+                className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <CreditCard className="w-4 h-4 text-white" />
+                <span>+ Collect Fee</span>
+              </Link>
+            )}
+            {perms.viewReceipts && (
+              <Link
+                href="/trainer/receipts"
+                className="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 border border-white/30 text-white font-bold text-xs backdrop-blur-md transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Receipt className="w-4 h-4" />
+                <span>Fee Receipts</span>
+              </Link>
+            )}
             {(perms.createStudents || perms.editStudents) && (
               <Link
                 href="/trainer/students"
@@ -249,29 +302,29 @@ export default function TrainerDashboardPage() {
 
       {/* KPI Cards */}
       {kpis.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           {kpis.map((kpi, idx) => {
             const Icon = kpi.icon;
             return (
               <Link
                 key={idx}
                 href={kpi.link}
-                className={`p-5 rounded-2xl bg-white border ${kpi.border} shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all group block`}
+                className={`p-4 rounded-2xl bg-white border ${kpi.border} shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all group block`}
               >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
                     {kpi.label}
                   </span>
-                  <div className={`w-9 h-9 rounded-xl ${kpi.bg} ${kpi.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                    <Icon className="w-5 h-5" />
+                  <div className={`w-8 h-8 rounded-xl ${kpi.bg} ${kpi.color} flex items-center justify-center group-hover:scale-110 transition-transform shrink-0`}>
+                    <Icon className="w-4 h-4" />
                   </div>
                 </div>
-                <div className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                <div className="text-2xl font-extrabold text-slate-900 tracking-tight truncate">
                   {kpi.value}
                 </div>
-                <p className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  {kpi.subtext}
+                <p className="text-[11px] text-slate-500 font-medium mt-1 flex items-center gap-1.5 truncate">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="truncate">{kpi.subtext}</span>
                 </p>
               </Link>
             );
@@ -361,7 +414,7 @@ export default function TrainerDashboardPage() {
           <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs">
             <h3 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              Role & Assigned Permissions
+              Role & Assigned Clearances
             </h3>
             <p className="text-xs text-slate-600 leading-relaxed">
               You are authenticated as <strong>{trainer.name}</strong> with <strong>Faculty Trainer</strong> clearance.
@@ -393,9 +446,27 @@ export default function TrainerDashboardPage() {
                 </span>
               </div>
               <div className="flex items-center justify-between text-slate-700">
-                <span>New Admissions:</span>
+                <span>Admissions:</span>
                 <span className={`font-semibold ${perms.editRegistrations ? "text-purple-700" : perms.viewRegistrations ? "text-emerald-600" : "text-slate-400"}`}>
                   {perms.editRegistrations ? "✓ Approve & Reject" : perms.viewRegistrations ? "✓ View Only" : "✕ Restricted"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-slate-700">
+                <span>Fees & Collections:</span>
+                <span className={`font-semibold ${(perms.createFees || perms.editFees) ? "text-purple-700" : perms.viewFees ? "text-emerald-600" : "text-slate-400"}`}>
+                  {(perms.createFees || perms.editFees) ? "✓ Collect & Add" : perms.viewFees ? "✓ View Only" : "✕ Restricted"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-slate-700">
+                <span>Fee Receipts:</span>
+                <span className={`font-semibold ${(perms.exportReceipts || perms.viewReceipts) ? "text-purple-700" : "text-slate-400"}`}>
+                  {(perms.exportReceipts || perms.viewReceipts) ? "✓ View & Download" : "✕ Restricted"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-slate-700">
+                <span>Institutional Reports:</span>
+                <span className={`font-semibold ${perms.exportReports ? "text-purple-700" : perms.viewReports ? "text-emerald-600" : "text-slate-400"}`}>
+                  {perms.exportReports ? "✓ View & CSV Export" : perms.viewReports ? "✓ View Only" : "✕ Restricted"}
                 </span>
               </div>
               <div className="flex items-center justify-between text-slate-700">

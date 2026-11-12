@@ -5,6 +5,7 @@ import { StudentProfile } from "@/lib/models/StudentProfile";
 import { Enrollment } from "@/lib/models/Enrollment";
 import { Course } from "@/lib/models/Course";
 import { Certificate } from "@/lib/models/Certificate";
+import { Payment } from "@/lib/models/Payment";
 
 export async function GET() {
   const { session, response } = await requireAdminOrTrainer();
@@ -22,6 +23,8 @@ export async function GET() {
       totalCourses,
       certificatesIssued,
       recentEnrollments,
+      feeAgg,
+      outAgg,
     ] = await Promise.all([
       isAdm || perms.viewStudents
         ? StudentProfile.countDocuments({ registrationStatus: "approved" })
@@ -38,10 +41,21 @@ export async function GET() {
       isAdm || perms.viewEnrollments || perms.viewStudents
         ? Enrollment.find({ enrollmentStatus: "active" })
             .populate("studentId", "fullName mobileNumber email")
-            .populate("courseId", "title code durationMonths")
+            .populate("courseId", "title code durationMonths durationText")
             .sort({ createdAt: -1 })
             .limit(6)
             .lean()
+        : Promise.resolve([]),
+      isAdm || perms.viewFees
+        ? Payment.aggregate([
+            { $group: { _id: null, total: { $sum: "$amount" }, count: { $sum: 1 } } },
+          ])
+        : Promise.resolve([]),
+      isAdm || perms.viewFees
+        ? Enrollment.aggregate([
+            { $match: { enrollmentStatus: { $ne: "cancelled" } } },
+            { $group: { _id: null, total: { $sum: "$outstandingBalance" } } },
+          ])
         : Promise.resolve([]),
     ]);
 
@@ -58,6 +72,9 @@ export async function GET() {
         activeEnrollments,
         totalCourses,
         certificatesIssued,
+        totalFeesCollected: feeAgg[0]?.total || 0,
+        totalOutstanding: outAgg[0]?.total || 0,
+        totalPaymentsCount: feeAgg[0]?.count || 0,
       },
       recentEnrollments: recentEnrollments.map((en: any) => ({
         _id: en._id?.toString(),

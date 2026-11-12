@@ -16,6 +16,8 @@ import {
   FileCheck2,
   FileSpreadsheet,
   FileText,
+  CreditCard,
+  Receipt,
 } from "lucide-react";
 
 interface NavItem {
@@ -33,6 +35,8 @@ const trainerNav: NavItem[] = [
   { label: "My Students", href: "/trainer/students", icon: Users, requiredPerm: "viewStudents" },
   { label: "Course Curriculum", href: "/trainer/courses", icon: BookOpen, requiredPerm: "viewCourses" },
   { label: "Batch Enrollments", href: "/trainer/enrollments", icon: FileText, requiredPerm: "viewEnrollments" },
+  { label: "Fees & Payments", href: "/trainer/fees", icon: CreditCard, requiredPerm: "viewFees" },
+  { label: "Fee Receipts", href: "/trainer/receipts", icon: Receipt, requiredPerm: "viewReceipts" },
   { label: "Certificates", href: "/trainer/certificates", icon: Award, requiredPerm: "viewCertificates" },
   { label: "Academic Reports", href: "/trainer/reports", icon: FileSpreadsheet, requiredPerm: "viewReports" },
 ];
