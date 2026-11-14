@@ -28,7 +28,15 @@ async function getFeaturedCourses() {
   try {
     await connectDB();
     const courses = await Course.find({ isActive: true }).sort({ durationMonths: 1 }).lean();
-    return courses;
+    return courses.map((c: any) => ({
+      _id: c._id.toString(),
+      code: c.code,
+      title: c.title,
+      description: c.description || "",
+      durationMonths: c.durationMonths || 1,
+      durationText: c.durationText || `${c.durationMonths || 1} Months`,
+      defaultFee: c.defaultFee || 0,
+    }));
   } catch (err) {
     console.error("Failed to load courses on landing:", err);
     return [];

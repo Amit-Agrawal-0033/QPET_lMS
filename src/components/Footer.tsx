@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -10,6 +13,25 @@ import {
 } from "lucide-react";
 
 export default function Footer() {
+  const [courses, setCourses] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadFooterCourses() {
+      try {
+        const res = await fetch("/api/courses", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.courses && Array.isArray(data.courses) && data.courses.length > 0) {
+            setCourses(data.courses.slice(0, 8));
+          }
+        }
+      } catch (err) {
+        // Silently handle error
+      }
+    }
+    loadFooterCourses();
+  }, []);
+
   return (
     <footer className="relative bg-gradient-to-b from-[#0F274A] via-[#0D203D] to-[#081528] text-blue-100 border-t border-[#3978E8]/30 text-sm overflow-hidden z-10">
       {/* Ambient Academic Lighting Glows */}
@@ -161,7 +183,7 @@ export default function Footer() {
           </div>
 
           {/* =================================================================== */}
-          {/* COLUMN 3: COMPUTER CURRICULUM                                       */}
+          {/* COLUMN 3: DYNAMIC COURSES FROM DATABASE                             */}
           {/* =================================================================== */}
           <div className="space-y-4">
             <h4 className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
@@ -169,26 +191,37 @@ export default function Footer() {
               Courses Offered
             </h4>
             <ul className="space-y-2.5 text-xs font-medium text-blue-200/90">
-              <li className="flex items-center justify-between">
-                <span>ADCA (Advance Diploma)</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#173B70] text-[#3978E8] border border-[#3978E8]/30">12M</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>DCA (Computer Applications)</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#173B70] text-[#3978E8] border border-[#3978E8]/30">6M</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>CCC (Computer Concepts)</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#173B70] text-[#3978E8] border border-[#3978E8]/30">3M</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Tally Prime + GST</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#173B70] text-[#3978E8] border border-[#3978E8]/30">3M</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Web Designing &amp; Coding</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#173B70] text-[#3978E8] border border-[#3978E8]/30">6M</span>
-              </li>
+              {courses.length > 0 ? (
+                <>
+                  {courses.map((course: any) => (
+                    <li key={course._id} className="flex items-center justify-between gap-2">
+                      <Link
+                        href={`/register?course=${course._id}`}
+                        className="hover:text-white transition-colors truncate"
+                        title={course.title}
+                      >
+                        {course.title}
+                      </Link>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#173B70] text-[#3978E8] border border-[#3978E8]/30 shrink-0">
+                        {course.durationText || `${course.durationMonths}M`}
+                      </span>
+                    </li>
+                  ))}
+                  <li className="pt-1">
+                    <Link
+                      href="/register"
+                      className="text-[11px] font-bold text-[#3978E8] hover:text-white flex items-center gap-1 transition-colors"
+                    >
+                      <span>Explore all courses &amp; enroll</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </li>
+                </>
+              ) : (
+                <li className="flex items-center justify-between text-blue-300/60">
+                  <span>Loading courses...</span>
+                </li>
+              )}
             </ul>
           </div>
 

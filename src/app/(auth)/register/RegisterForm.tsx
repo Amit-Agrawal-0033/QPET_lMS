@@ -58,7 +58,7 @@ export default function RegisterForm({ initialCourses = [] }: RegisterFormProps)
   useEffect(() => {
     async function fetchCourses() {
       try {
-        let res = await fetch("/api/courses");
+        let res = await fetch("/api/courses", { cache: "no-store" });
         if (!res.ok) {
           res = await fetch("/api/admin/courses");
         }
@@ -67,11 +67,15 @@ export default function RegisterForm({ initialCourses = [] }: RegisterFormProps)
           if (data.courses && Array.isArray(data.courses) && data.courses.length > 0) {
             const activeCourses = data.courses.filter((c: any) => c.isActive !== false);
             setCourses(activeCourses);
-            if (preselectedCourse && activeCourses.some((c: any) => c._id === preselectedCourse)) {
-              setFormData((prev) => ({ ...prev, preferredCourseId: preselectedCourse }));
-            } else if (activeCourses.length > 0 && !formData.preferredCourseId) {
-              setFormData((prev) => ({ ...prev, preferredCourseId: activeCourses[0]._id }));
-            }
+            setFormData((prev) => {
+              if (preselectedCourse && activeCourses.some((c: any) => c._id === preselectedCourse)) {
+                return { ...prev, preferredCourseId: preselectedCourse };
+              }
+              if (!prev.preferredCourseId || !activeCourses.some((c: any) => c._id === prev.preferredCourseId)) {
+                return { ...prev, preferredCourseId: activeCourses[0]._id };
+              }
+              return prev;
+            });
             setLoadingCourses(false);
             return;
           }
@@ -257,14 +261,17 @@ export default function RegisterForm({ initialCourses = [] }: RegisterFormProps)
               required
               className="w-full px-4 py-3 bg-white border border-[#3978E8]/25 rounded-xl text-sm text-[#173B70] font-bold focus:outline-none focus:border-[#3978E8] focus:ring-3 focus:ring-[#3978E8]/15 transition-all cursor-pointer shadow-xs"
             >
-              {courses.length === 0 && loadingCourses ? (
-                <option value="">Loading computer courses...</option>
-              ) : courses.length === 0 ? (
-                <option value="">No active courses found. Please contact administration.</option>
+              <option value="" disabled>
+                {loadingCourses && courses.length === 0
+                  ? "Loading computer courses from database..."
+                  : "-- Select Course of Study --"}
+              </option>
+              {courses.length === 0 && !loadingCourses ? (
+                <option value="" disabled>No active courses found. Please contact administration.</option>
               ) : (
                 courses.map((course) => (
                   <option key={course._id} value={course._id}>
-                    {course.title} ({course.code}) — {course.durationText || `${course.durationMonths} Months`} (₹{course.defaultFee.toLocaleString("en-IN")})
+                    {course.title} ({course.code}) — {course.durationText || `${course.durationMonths} Months`} (₹{course.defaultFee ? course.defaultFee.toLocaleString("en-IN") : 0})
                   </option>
                 ))
               )}
