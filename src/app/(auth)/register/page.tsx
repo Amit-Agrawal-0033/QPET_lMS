@@ -61,19 +61,26 @@ function RegisterForm() {
   useEffect(() => {
     async function fetchCourses() {
       try {
-        const res = await fetch("/api/admin/courses");
-        const data = await res.json();
-        if (data.courses) {
-          const activeCourses = data.courses.filter((c: any) => c.isActive);
-          setCourses(activeCourses);
-          if (preselectedCourse && activeCourses.some((c: any) => c._id === preselectedCourse)) {
-            setFormData((prev) => ({ ...prev, preferredCourseId: preselectedCourse }));
-          } else if (activeCourses.length > 0 && !formData.preferredCourseId) {
-            setFormData((prev) => ({ ...prev, preferredCourseId: activeCourses[0]._id }));
+        let res = await fetch("/api/courses");
+        if (!res.ok) {
+          res = await fetch("/api/admin/courses");
+        }
+        if (res.ok) {
+          const data = await res.json();
+          if (data.courses && Array.isArray(data.courses) && data.courses.length > 0) {
+            const activeCourses = data.courses.filter((c: any) => c.isActive !== false);
+            setCourses(activeCourses);
+            if (preselectedCourse && activeCourses.some((c: any) => c._id === preselectedCourse)) {
+              setFormData((prev) => ({ ...prev, preferredCourseId: preselectedCourse }));
+            } else if (activeCourses.length > 0 && !formData.preferredCourseId) {
+              setFormData((prev) => ({ ...prev, preferredCourseId: activeCourses[0]._id }));
+            }
+            setLoadingCourses(false);
+            return;
           }
         }
       } catch (err) {
-        console.error("Failed to load courses:", err);
+        console.error("Failed to load courses from API:", err);
       } finally {
         setLoadingCourses(false);
       }
