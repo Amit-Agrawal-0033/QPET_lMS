@@ -6,23 +6,20 @@ import {
   Phone,
   MapPin,
   ArrowRight,
-  ExternalLink,
-  BookOpen,
   Sparkles,
-  Heart,
 } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="relative bg-gradient-to-b from-[#250645] via-[#1B0333] to-[#120224] text-purple-200 border-t-2 border-purple-900/60 text-sm overflow-hidden z-10">
-      {/* Ambient Volumetric Lighting Glows */}
+    <footer className="relative bg-gradient-to-b from-[#0F274A] via-[#0D203D] to-[#081528] text-blue-100 border-t border-[#3978E8]/30 text-sm overflow-hidden z-10">
+      {/* Ambient Academic Lighting Glows */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-[500px] h-[300px] bg-[radial-gradient(circle,_rgba(203,179,230,0.12)_0%,_transparent_70%)] blur-2xl" />
-        <div className="absolute bottom-0 right-10 w-[400px] h-[300px] bg-[radial-gradient(circle,_rgba(212,255,63,0.08)_0%,_transparent_70%)] blur-2xl" />
+        <div className="absolute top-0 left-1/4 w-[500px] h-[300px] bg-[radial-gradient(circle,_rgba(57,120,232,0.14)_0%,_transparent_70%)] blur-2xl" />
+        <div className="absolute bottom-0 right-10 w-[400px] h-[300px] bg-[radial-gradient(circle,_rgba(22,168,154,0.10)_0%,_transparent_70%)] blur-2xl" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8 pb-12 border-b border-purple-800/40">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8 pb-12 border-b border-[#3978E8]/20">
           {/* =================================================================== */}
           {/* COLUMN 1 & 2: BRAND & MISSION                                       */}
           {/* =================================================================== */}
@@ -40,22 +37,22 @@ export default function Footer() {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-black text-2xl text-white tracking-tight">QPET</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#D4FF3F] text-[#1E0B36] font-black border border-[#8EB605]">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#16A89A] text-white font-black tracking-wider">
                     PORTAL
                   </span>
                 </div>
-                <p className="text-xs text-purple-300 font-semibold tracking-wide">
+                <p className="text-xs text-blue-200/90 font-semibold tracking-wide">
                   Qplus Education &amp; Training
                 </p>
               </div>
             </Link>
 
-            <p className="text-xs sm:text-sm text-purple-300/80 leading-relaxed max-w-sm font-medium">
+            <p className="text-xs sm:text-sm text-blue-100/75 leading-relaxed max-w-sm font-normal">
               QPET Institute of Information Technology is dedicated to providing quality professional education, job-oriented practical computer training, and tamper-proof industry certifications.
             </p>
 
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-purple-700/50 text-[11px] font-semibold text-purple-200">
-              <Sparkles className="w-3.5 h-3.5 text-[#E34234]" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-[#3978E8]/30 text-[11px] font-medium text-blue-100">
+              <Sparkles className="w-3.5 h-3.5 text-[#16A89A]" />
               <span>Empower Learning, Empower Future</span>
             </div>
 
@@ -93,7 +90,7 @@ export default function Footer() {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Facebook"
-                className="w-9 h-9 rounded-xl bg-white/10 hover:bg-blue-600 border border-white/15 flex items-center justify-center text-white hover:scale-110 hover:shadow-lg transition-all"
+                className="w-9 h-9 rounded-xl bg-white/10 hover:bg-[#3978E8] border border-white/15 flex items-center justify-center text-white hover:scale-110 hover:shadow-lg transition-all"
               >
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
@@ -120,43 +117,43 @@ export default function Footer() {
           {/* =================================================================== */}
           <div className="space-y-4">
             <h4 className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#D4FF3F]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#16A89A]" />
               Quick Portals
             </h4>
             <ul className="space-y-2.5 text-xs font-medium">
               <li>
                 <Link
                   href="/"
-                  className="hover:text-[#D4FF3F] hover:translate-x-1 inline-flex items-center gap-1.5 transition-all"
+                  className="hover:text-[#16A89A] hover:translate-x-1 inline-flex items-center gap-1.5 transition-all text-blue-200"
                 >
-                  <ArrowRight className="w-3 h-3 text-purple-400" />
+                  <ArrowRight className="w-3 h-3 text-[#3978E8]" />
                   <span>Home Page</span>
                 </Link>
               </li>
               <li>
                 <Link
                   href="/register"
-                  className="hover:text-[#D4FF3F] hover:translate-x-1 inline-flex items-center gap-1.5 transition-all"
+                  className="hover:text-[#16A89A] hover:translate-x-1 inline-flex items-center gap-1.5 transition-all text-blue-200"
                 >
-                  <ArrowRight className="w-3 h-3 text-purple-400" />
+                  <ArrowRight className="w-3 h-3 text-[#3978E8]" />
                   <span>Student Self-Registration</span>
                 </Link>
               </li>
               <li>
                 <Link
                   href="/login"
-                  className="hover:text-[#D4FF3F] hover:translate-x-1 inline-flex items-center gap-1.5 transition-all"
+                  className="hover:text-[#16A89A] hover:translate-x-1 inline-flex items-center gap-1.5 transition-all text-blue-200"
                 >
-                  <ArrowRight className="w-3 h-3 text-purple-400" />
+                  <ArrowRight className="w-3 h-3 text-[#3978E8]" />
                   <span>Portal Login (Admin &amp; Student)</span>
                 </Link>
               </li>
               <li>
                 <Link
                   href="/verify-certificate"
-                  className="hover:text-[#D4FF3F] hover:translate-x-1 inline-flex items-center gap-1.5 transition-all text-purple-100"
+                  className="hover:text-[#16A89A] hover:translate-x-1 inline-flex items-center gap-1.5 transition-all text-white font-semibold"
                 >
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#E34234]" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#16A89A]" />
                   <span>Public QR Verification</span>
                 </Link>
               </li>
@@ -168,29 +165,29 @@ export default function Footer() {
           {/* =================================================================== */}
           <div className="space-y-4">
             <h4 className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#E34234]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#3978E8]" />
               Courses Offered
             </h4>
-            <ul className="space-y-2.5 text-xs font-medium text-purple-300/90">
+            <ul className="space-y-2.5 text-xs font-medium text-blue-200/90">
               <li className="flex items-center justify-between">
                 <span>ADCA (Advance Diploma)</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-900/60 text-purple-300">12M</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#173B70] text-[#3978E8] border border-[#3978E8]/30">12M</span>
               </li>
               <li className="flex items-center justify-between">
                 <span>DCA (Computer Applications)</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-900/60 text-purple-300">6M</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#173B70] text-[#3978E8] border border-[#3978E8]/30">6M</span>
               </li>
               <li className="flex items-center justify-between">
                 <span>CCC (Computer Concepts)</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-900/60 text-purple-300">3M</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#173B70] text-[#3978E8] border border-[#3978E8]/30">3M</span>
               </li>
               <li className="flex items-center justify-between">
                 <span>Tally Prime + GST</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-900/60 text-purple-300">3M</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#173B70] text-[#3978E8] border border-[#3978E8]/30">3M</span>
               </li>
               <li className="flex items-center justify-between">
                 <span>Web Designing &amp; Coding</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-900/60 text-purple-300">6M</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#173B70] text-[#3978E8] border border-[#3978E8]/30">6M</span>
               </li>
             </ul>
           </div>
@@ -200,35 +197,35 @@ export default function Footer() {
           {/* =================================================================== */}
           <div className="space-y-4">
             <h4 className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#16A89A]" />
               Administrative Office
             </h4>
             <ul className="space-y-3 text-xs font-medium">
               <li className="flex items-start gap-2.5">
-                <MapPin className="w-4 h-4 text-[#D4FF3F] shrink-0 mt-0.5" />
-                <span className="text-purple-300/90">QPET Computer Academy &amp; IT Learning Campus</span>
+                <MapPin className="w-4 h-4 text-[#16A89A] shrink-0 mt-0.5" />
+                <span className="text-blue-100/90">QPET Computer Academy &amp; IT Learning Campus</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <Phone className="w-4 h-4 text-[#D4FF3F] shrink-0" />
+                <Phone className="w-4 h-4 text-[#16A89A] shrink-0" />
                 <a
                   href="tel:18002021511"
-                  className="text-purple-200 font-mono hover:text-white transition-colors"
+                  className="text-blue-100 font-mono hover:text-white transition-colors"
                 >
                   18002021511
                 </a>
               </li>
               <li className="flex items-center gap-2.5">
-                <Mail className="w-4 h-4 text-[#D4FF3F] shrink-0" />
+                <Mail className="w-4 h-4 text-[#16A89A] shrink-0" />
                 <a
                   href="mailto:info@qpet.in"
-                  className="text-purple-200 hover:text-white transition-colors"
+                  className="text-blue-100 hover:text-white transition-colors"
                 >
                   info@qpet.in
                 </a>
               </li>
               <li className="pt-1">
-                <div className="px-3 py-1.5 rounded-xl bg-purple-950/80 border border-purple-800 text-[11px] text-purple-300 flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#D4FF3F]" />
+                <div className="px-3 py-1.5 rounded-xl bg-[#173B70]/60 border border-[#3978E8]/30 text-[11px] text-blue-200 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#16A89A]" />
                   <span>ISO 9001:2015 Certified System</span>
                 </div>
               </li>
@@ -239,7 +236,7 @@ export default function Footer() {
         {/* =================================================================== */}
         {/* BOTTOM UTILITY BAR                                                  */}
         {/* =================================================================== */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-purple-400 font-medium">
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-blue-300/75 font-medium">
           <div className="flex items-center gap-2">
             <span>© {new Date().getFullYear()} QPET LMS (Qplus Education &amp; Training).</span>
             <span className="hidden sm:inline">•</span>
