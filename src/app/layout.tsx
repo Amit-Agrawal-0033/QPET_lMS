@@ -25,7 +25,8 @@ export default function RootLayout({
                     msg.indexOf('Loading chunk') !== -1 ||
                     msg.indexOf('ChunkLoadError') !== -1 ||
                     msg.indexOf('Failed to fetch dynamically imported module') !== -1 ||
-                    (e && e.target && e.target.tagName === 'SCRIPT' && e.target.src && e.target.src.indexOf('/_next/static/') !== -1);
+                    msg.indexOf('is not a function') !== -1 ||
+                    (e && e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK') && (e.target.src || e.target.href) && (e.target.src || e.target.href).indexOf('/_next/static/') !== -1);
                   if (isChunkError) {
                     var key = 'qpet_chunk_reload_ts';
                     var last = sessionStorage.getItem(key);

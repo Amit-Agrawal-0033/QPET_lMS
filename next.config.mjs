@@ -34,7 +34,16 @@ const nextConfig = {
         ],
       },
       {
-        source: "/:path(admin.*|trainer.*|student.*|login|api.*)",
+        source: "/_next/static/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/((?!_next/static|_next/image|favicon.ico|images).*)",
         headers: [
           {
             key: "Cache-Control",
