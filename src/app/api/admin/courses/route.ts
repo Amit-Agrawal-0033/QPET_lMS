@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { requireAdminOrTrainer, requireAdmin } from "@/lib/auth/guards";
 import { connectDB } from "@/lib/db/mongoose";
 import { Course } from "@/lib/models/Course";
@@ -105,6 +106,14 @@ export async function POST(req: NextRequest) {
       details: { code: course.code, title: course.title, fee: course.defaultFee, duration: text },
     });
 
+    try {
+      revalidatePath("/");
+      revalidatePath("/register");
+      revalidatePath("/api/courses");
+    } catch (e) {
+      // Ignore cache revalidation errors
+    }
+
     return NextResponse.json({ success: true, course }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Failed to create course." }, { status: 500 });
@@ -159,6 +168,14 @@ export async function PUT(req: NextRequest) {
       details: { code: course.code, title: course.title },
     });
 
+    try {
+      revalidatePath("/");
+      revalidatePath("/register");
+      revalidatePath("/api/courses");
+    } catch (e) {
+      // Ignore cache revalidation errors
+    }
+
     return NextResponse.json({ success: true, course });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Failed to update course." }, { status: 500 });
@@ -194,6 +211,14 @@ export async function DELETE(req: NextRequest) {
       targetId: id,
       details: { code: course.code, title: course.title },
     });
+
+    try {
+      revalidatePath("/");
+      revalidatePath("/register");
+      revalidatePath("/api/courses");
+    } catch (e) {
+      // Ignore cache revalidation errors
+    }
 
     return NextResponse.json({ success: true, message: "Course deleted successfully." });
   } catch (error: any) {
