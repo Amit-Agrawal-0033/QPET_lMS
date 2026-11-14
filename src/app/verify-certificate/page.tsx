@@ -20,6 +20,8 @@ import {
   Sparkles,
   Lock,
   FileCheck,
+  Building,
+  QrCode,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -70,9 +72,9 @@ function CertificateVerifier() {
   };
 
   return (
-    <div className="w-full max-w-3xl space-y-8 relative z-10">
+    <div className="w-full max-w-4xl space-y-10 relative z-10 py-6">
       {/* Verification Card in Premium Academic Styling */}
-      <div className="bg-white/95 backdrop-blur-xl border-2 border-[#3978E8]/20 rounded-3xl p-7 sm:p-10 shadow-[0_20px_50px_-10px_rgba(23,59,112,0.12)] relative overflow-hidden">
+      <div className="bg-white/95 backdrop-blur-xl border-2 border-[#3978E8]/20 rounded-3xl p-7 sm:p-12 shadow-[0_20px_50px_-10px_rgba(23,59,112,0.12)] relative overflow-hidden">
         {/* Subtle Ambient Corner Accents */}
         <div className="absolute -top-16 -right-16 w-44 h-44 rounded-full bg-[#3978E8]/10 blur-2xl pointer-events-none" />
         <div className="absolute -bottom-16 -left-16 w-44 h-44 rounded-full bg-[#16A89A]/10 blur-2xl pointer-events-none" />
@@ -84,11 +86,11 @@ function CertificateVerifier() {
             <span>Official Credential Registry</span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-black text-[#173B70] tracking-tight">
+          <h1 className="text-3xl sm:text-4xl font-black text-[#173B70] tracking-tight">
             Certificate Verification Portal
           </h1>
 
-          <p className="text-xs sm:text-sm text-[#173B70]/75 font-normal max-w-lg mx-auto leading-relaxed">
+          <p className="text-xs sm:text-sm text-[#173B70]/75 font-normal max-w-xl mx-auto leading-relaxed">
             Verify the authenticity, accreditation, and institutional validity of graduation certificates issued by QPET Institute of Information Technology.
           </p>
         </div>
@@ -99,7 +101,7 @@ function CertificateVerifier() {
             e.preventDefault();
             handleVerify();
           }}
-          className="flex flex-col sm:flex-row gap-3 relative z-10 mb-6"
+          className="flex flex-col sm:flex-row gap-3 relative z-10 mb-8 max-w-2xl mx-auto"
         >
           <div className="relative flex-1">
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#173B70]/50">
@@ -111,14 +113,14 @@ function CertificateVerifier() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Enter Certificate Number (e.g. QPET-CERT-2026-00001)"
               required
-              className="w-full pl-10 pr-4 py-3 bg-[#F5F8FF] border border-[#3978E8]/25 rounded-xl text-sm text-[#173B70] placeholder-[#173B70]/40 font-medium focus:outline-none focus:bg-white focus:border-[#3978E8] focus:ring-3 focus:ring-[#3978E8]/15 transition-all shadow-inner"
+              className="w-full pl-10 pr-4 py-3.5 bg-[#F5F8FF] border border-[#3978E8]/25 rounded-xl text-sm text-[#173B70] placeholder-[#173B70]/40 font-medium focus:outline-none focus:bg-white focus:border-[#3978E8] focus:ring-3 focus:ring-[#3978E8]/15 transition-all shadow-inner"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="px-7 py-3 rounded-xl text-xs font-bold uppercase tracking-wider text-white bg-gradient-to-r from-[#173B70] via-[#3978E8] to-[#7654D6] hover:opacity-95 shadow-md shadow-[#3978E8]/25 hover:-translate-y-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            className="px-8 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider text-white bg-gradient-to-r from-[#173B70] via-[#3978E8] to-[#7654D6] hover:opacity-95 shadow-md shadow-[#3978E8]/25 hover:-translate-y-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shrink-0"
           >
             {loading ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -135,7 +137,7 @@ function CertificateVerifier() {
         {/* VERIFICATION RESULT DISPLAY                                           */}
         {/* ===================================================================== */}
         {hasSearched && result && (
-          <div className="relative z-10 transition-all duration-300">
+          <div className="relative z-10 transition-all duration-300 max-w-2xl mx-auto">
             {/* 1. VALID CERTIFICATE RESULT */}
             {result.status === "valid" ? (
               <div className="rounded-2xl border-2 border-[#16A89A]/40 bg-[#16A89A]/5 p-6 sm:p-8 space-y-6 shadow-sm">
@@ -266,36 +268,56 @@ function CertificateVerifier() {
       </div>
 
       {/* 3 Pillars of Security / Info Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
-        <div className="p-4 rounded-xl bg-white border border-[#3978E8]/15 shadow-xs space-y-1.5">
-          <div className="w-8 h-8 rounded-lg bg-[#3978E8]/10 text-[#3978E8] flex items-center justify-center">
-            <Lock className="w-4 h-4" />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 text-left">
+        <div className="p-5 rounded-2xl bg-white border border-[#3978E8]/15 shadow-xs space-y-2">
+          <div className="w-10 h-10 rounded-xl bg-[#3978E8]/10 text-[#3978E8] flex items-center justify-center">
+            <Lock className="w-5 h-5" />
           </div>
-          <h4 className="text-xs font-bold text-[#173B70]">Cryptographic Hash</h4>
-          <p className="text-[11px] text-[#173B70]/70 leading-relaxed">
-            Every issued certificate contains an immutable cryptographic signature.
+          <h4 className="text-sm font-bold text-[#173B70]">Cryptographic Hash</h4>
+          <p className="text-xs text-[#173B70]/70 leading-relaxed">
+            Every issued certificate contains an immutable cryptographic signature verifiable globally.
           </p>
         </div>
 
-        <div className="p-4 rounded-xl bg-white border border-[#16A89A]/15 shadow-xs space-y-1.5">
-          <div className="w-8 h-8 rounded-lg bg-[#16A89A]/10 text-[#16A89A] flex items-center justify-center">
-            <FileCheck className="w-4 h-4" />
+        <div className="p-5 rounded-2xl bg-white border border-[#16A89A]/15 shadow-xs space-y-2">
+          <div className="w-10 h-10 rounded-xl bg-[#16A89A]/10 text-[#16A89A] flex items-center justify-center">
+            <FileCheck className="w-5 h-5" />
           </div>
-          <h4 className="text-xs font-bold text-[#173B70]">Live Registry Audit</h4>
-          <p className="text-[11px] text-[#173B70]/70 leading-relaxed">
-            Real-time synchronization with the QPET central academic database.
+          <h4 className="text-sm font-bold text-[#173B70]">Live Registry Audit</h4>
+          <p className="text-xs text-[#173B70]/70 leading-relaxed">
+            Instant real-time synchronization with the QPET central academic database ledger.
           </p>
         </div>
 
-        <div className="p-4 rounded-xl bg-white border border-[#7654D6]/15 shadow-xs space-y-1.5">
-          <div className="w-8 h-8 rounded-lg bg-[#7654D6]/10 text-[#7654D6] flex items-center justify-center">
-            <ShieldCheck className="w-4 h-4" />
+        <div className="p-5 rounded-2xl bg-white border border-[#7654D6]/15 shadow-xs space-y-2">
+          <div className="w-10 h-10 rounded-xl bg-[#7654D6]/10 text-[#7654D6] flex items-center justify-center">
+            <ShieldCheck className="w-5 h-5" />
           </div>
-          <h4 className="text-xs font-bold text-[#173B70]">Privacy Safeguard</h4>
-          <p className="text-[11px] text-[#173B70]/70 leading-relaxed">
-            Confidential contact and financial records remain strictly protected.
+          <h4 className="text-sm font-bold text-[#173B70]">Privacy Safeguard</h4>
+          <p className="text-xs text-[#173B70]/70 leading-relaxed">
+            Confidential contact and financial records remain strictly protected under privacy standards.
           </p>
         </div>
+      </div>
+
+      {/* Institutional Guarantee Card for Employers & Recruiters */}
+      <div className="p-6 rounded-2xl bg-[#173B70] text-white flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="space-y-1 text-center sm:text-left">
+          <h4 className="font-bold text-sm text-white flex items-center gap-2 justify-center sm:justify-start">
+            <Building className="w-4 h-4 text-[#16A89A]" />
+            For Employers, HR Recruiters &amp; Background Check Agencies
+          </h4>
+          <p className="text-xs text-blue-100/80 max-w-xl">
+            For written official confirmation or duplicate transcript inquiries, please contact the Controller of Examinations at <a href="mailto:info@qpet.in" className="underline text-blue-200">info@qpet.in</a> with the candidate's certificate ID.
+          </p>
+        </div>
+
+        <Link
+          href="/register"
+          className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-[#173B70] bg-[#16A89A] hover:bg-white transition-colors shrink-0"
+        >
+          Explore Courses
+        </Link>
       </div>
     </div>
   );

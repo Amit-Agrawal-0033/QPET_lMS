@@ -53,13 +53,13 @@ export default async function HomePage() {
       {/* ========================================================================= */}
       {/* HERO SECTION: Academic Identity with Stationary 3D Books & Learning Desk */}
       {/* ========================================================================= */}
-      <section className="relative z-10 pt-10 pb-16 sm:pt-16 sm:pb-20 lg:pt-20 lg:pb-24 px-4 sm:px-6 lg:px-8 border-b border-[#3978E8]/10">
+      <section className="relative z-10 pt-8 pb-14 sm:pt-14 sm:pb-18 lg:pt-16 lg:pb-20 px-4 sm:px-6 lg:px-8 border-b border-[#3978E8]/10">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-10 items-center">
             {/* Left Column: Academic Typography & CTAs (7 cols) */}
-            <div className="lg:col-span-7 space-y-6 text-left">
+            <div className="md:col-span-7 space-y-5 text-left">
               {/* Trust Badge */}
-              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/90 backdrop-blur-md border border-[#3978E8]/20 text-[#173B70] text-xs font-bold tracking-wide shadow-sm shadow-[#173B70]/5">
+              <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-[#3978E8]/20 text-[#173B70] text-xs font-bold tracking-wide shadow-sm shadow-[#173B70]/5">
                 <span className="flex h-2 w-2 rounded-full bg-[#16A89A]" />
                 <span className="uppercase tracking-wider text-[11px] font-black text-[#173B70]">
                   QPET Institute of Information Technology
@@ -69,7 +69,7 @@ export default async function HomePage() {
               </div>
 
               {/* Headline */}
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#173B70] leading-[1.12]">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[#173B70] leading-[1.14]">
                 Quality Professional Education &amp; Training{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#173B70] via-[#3978E8] to-[#7654D6]">
                   LMS Portal
@@ -77,16 +77,16 @@ export default async function HomePage() {
               </h1>
 
               {/* Subtitle */}
-              <p className="text-sm sm:text-base lg:text-lg text-[#173B70]/80 font-normal leading-relaxed max-w-2xl">
+              <p className="text-sm sm:text-base text-[#173B70]/80 font-normal leading-relaxed max-w-xl">
                 Comprehensive academic management for student registrations, sequential enrollment tracking, installment fee receipts, and official tamper-proof QR certificate verification.
               </p>
 
               {/* Action Buttons: 3 Modern Academic Buttons */}
-              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 sm:gap-4 max-w-xl">
+              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-3.5 max-w-xl">
                 {/* Button 1: Student Self-Registration (Primary) */}
                 <Link
                   href="/register"
-                  className="px-6 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider text-white bg-gradient-to-r from-[#173B70] via-[#3978E8] to-[#7654D6] hover:opacity-95 shadow-[0_10px_25px_-5px_rgba(57,120,232,0.4)] hover:-translate-y-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-2.5 group"
+                  className="px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-wider text-white bg-gradient-to-r from-[#173B70] via-[#3978E8] to-[#7654D6] hover:opacity-95 shadow-[0_8px_20px_-4px_rgba(57,120,232,0.4)] hover:-translate-y-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 group"
                 >
                   <span>Student Self-Registration</span>
                   <div className="w-5 h-5 rounded-full bg-[#16A89A] text-white flex items-center justify-center text-[10px] group-hover:translate-x-0.5 transition-transform">
@@ -97,7 +97,7 @@ export default async function HomePage() {
                 {/* Button 2: Portal Login (Navy Outline) */}
                 <Link
                   href="/login"
-                  className="px-6 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider text-[#173B70] bg-white hover:bg-[#F5F8FF] border-2 border-[#173B70]/20 hover:border-[#173B70] shadow-sm hover:-translate-y-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 group"
+                  className="px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-wider text-[#173B70] bg-white hover:bg-[#F5F8FF] border-2 border-[#173B70]/20 hover:border-[#173B70] shadow-sm hover:-translate-y-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 group"
                 >
                   <span>Portal Login</span>
                   <ChevronRight className="w-4 h-4 text-[#3978E8] group-hover:translate-x-0.5 transition-transform stroke-[2.5]" />
@@ -106,7 +106,7 @@ export default async function HomePage() {
                 {/* Button 3: Verify Certificate (Glass Accent) */}
                 <Link
                   href="/verify-certificate"
-                  className="px-5 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider text-[#173B70] bg-[#16A89A]/10 hover:bg-[#16A89A]/20 border border-[#16A89A]/30 shadow-xs hover:-translate-y-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-2 group"
+                  className="px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider text-[#173B70] bg-[#16A89A]/10 hover:bg-[#16A89A]/20 border border-[#16A89A]/30 shadow-xs hover:-translate-y-0.5 active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 group"
                 >
                   <ShieldCheck className="w-4 h-4 text-[#16A89A] stroke-[2.5]" />
                   <span>Verify Certificate</span>
@@ -114,7 +114,7 @@ export default async function HomePage() {
               </div>
 
               {/* Trust Metric Counters */}
-              <div className="pt-6 border-t border-[#3978E8]/15 grid grid-cols-3 gap-4 sm:gap-6 max-w-xl">
+              <div className="pt-4 border-t border-[#3978E8]/15 grid grid-cols-3 gap-3 sm:gap-6 max-w-lg">
                 <div>
                   <div className="text-xl sm:text-2xl font-black text-[#173B70]">100%</div>
                   <div className="text-[11px] font-semibold text-[#173B70]/70 mt-0.5">Tamper-Proof QR</div>
@@ -132,7 +132,7 @@ export default async function HomePage() {
 
             {/* Right Column: Realistic 3D Stationary Books & Academic Desk Scene (5 cols) */}
             {/* NOTE: BOOKS ARE COMPLETELY STATIONARY — NO SPINNING, NO BOUNCING, NO FLOATING */}
-            <div className="lg:col-span-5 relative flex items-center justify-center">
+            <div className="md:col-span-5 relative flex items-center justify-center">
               <div className="w-full max-w-lg relative">
                 {/* Background Academic Glow Card */}
                 <div className="absolute inset-0 bg-gradient-to-tr from-[#3978E8]/10 via-[#7654D6]/10 to-[#16A89A]/10 rounded-3xl blur-2xl transform scale-95 pointer-events-none" />
