@@ -206,8 +206,8 @@ export async function POST(req: NextRequest) {
       displayName = user.name || "QPET Trainer";
     }
 
-    // Set secure HTTP-only session cookie
-    await setSessionCookie({
+    // Set secure HTTP-only session cookie (and retrieve token for mobile apps)
+    const token = await setSessionCookie({
       userId: user._id.toString(),
       identifier: user.identifier,
       role: user.role,
@@ -239,6 +239,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      token,
       redirectUrl,
       user: {
         id: user._id.toString(),

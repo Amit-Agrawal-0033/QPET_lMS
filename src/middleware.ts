@@ -17,6 +17,17 @@ function addSecurityHeaders(response: NextResponse) {
   return response;
 }
 
+function getToken(request: NextRequest): string | undefined {
+  const cookieToken = request.cookies.get(COOKIE_NAME)?.value;
+  if (cookieToken) return cookieToken;
+
+  const authHeader = request.headers.get("authorization");
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    return authHeader.substring(7).trim();
+  }
+  return undefined;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isApi = pathname.startsWith("/api/");
@@ -25,7 +36,7 @@ export async function middleware(request: NextRequest) {
   // 1. ADMIN ROUTES (/admin/* & /api/admin/*) - STRICTLY ADMIN ONLY
   // =========================================================================
   if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
-    const token = request.cookies.get(COOKIE_NAME)?.value;
+    const token = getToken(request);
     if (!token) {
       if (isApi) {
         return addSecurityHeaders(
@@ -97,7 +108,7 @@ export async function middleware(request: NextRequest) {
   // 2. TRAINER ROUTES (/trainer/* & /api/trainer/*) - TRAINER & ADMIN ONLY
   // =========================================================================
   if (pathname.startsWith("/trainer") || pathname.startsWith("/api/trainer")) {
-    const token = request.cookies.get(COOKIE_NAME)?.value;
+    const token = getToken(request);
     if (!token) {
       if (isApi) {
         return addSecurityHeaders(
@@ -148,7 +159,7 @@ export async function middleware(request: NextRequest) {
   // 3. STUDENT ROUTES (/student/* & /api/student/*) - STUDENT ONLY
   // =========================================================================
   if (pathname.startsWith("/student") || pathname.startsWith("/api/student")) {
-    const token = request.cookies.get(COOKIE_NAME)?.value;
+    const token = getToken(request);
     if (!token) {
       if (isApi) {
         return addSecurityHeaders(
