@@ -88,10 +88,11 @@ export default function AdminEnrollmentsPage() {
   };
 
   const openCreateModal = () => {
+    const firstCourse = courses[0];
     setFormData({
       studentId: students[0]?._id || "",
-      courseId: courses[0]?._id || "",
-      customFee: "",
+      courseId: firstCourse?._id || "",
+      customFee: firstCourse?.defaultFee !== undefined ? String(firstCourse.defaultFee) : "",
       discountAmount: "",
       paymentType: "full",
       installmentCount: "3",
@@ -430,6 +431,46 @@ export default function AdminEnrollmentsPage() {
                   />
                 </div>
               </div>
+
+              {/* Dynamic Fee & Discount Summary */}
+              {(() => {
+                const selectedC = courses.find((c) => c._id === formData.courseId);
+                const baseF = formData.customFee !== "" ? Number(formData.customFee) : (selectedC?.defaultFee || 0);
+                const discF = Number(formData.discountAmount) || 0;
+                const netF = Math.max(0, baseF - discF);
+                const instC = Number(formData.installmentCount) || 1;
+                const perInst = Math.round(netF / instC);
+
+                return (
+                  <div className="space-y-2">
+                    <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl space-y-1">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-slate-600">Base Agreed Fee:</span>
+                        <span className="font-semibold text-slate-900">₹{baseF.toLocaleString("en-IN")}</span>
+                      </div>
+                      {discF > 0 && (
+                        <div className="flex justify-between items-center text-xs text-emerald-700">
+                          <span>Discount / Concession:</span>
+                          <span className="font-bold">- ₹{discF.toLocaleString("en-IN")}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center text-xs pt-1 border-t border-blue-200/80 font-bold">
+                        <span className="text-slate-800">Final Net Payable Fee:</span>
+                        <span className="text-blue-700 text-sm font-black">₹{netF.toLocaleString("en-IN")}</span>
+                      </div>
+                    </div>
+
+                    {formData.paymentType === "installment" && (
+                      <div className="p-2.5 bg-amber-50/70 border border-amber-200/80 rounded-xl text-[11px] text-amber-900 flex items-center justify-between font-medium">
+                        <span>Installment Schedule:</span>
+                        <span className="font-bold">
+                          {formData.installmentCount} Monthly Payments of ~₹{perInst.toLocaleString("en-IN")} each
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               <div>
                 <label className="block text-slate-700 font-semibold mb-1.5">

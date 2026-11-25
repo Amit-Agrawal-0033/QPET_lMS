@@ -6,6 +6,7 @@ import { User } from "@/lib/models/User";
 import { Course } from "@/lib/models/Course";
 import { Enrollment } from "@/lib/models/Enrollment";
 import { Installment } from "@/lib/models/Installment";
+import { CourseRequest } from "@/lib/models/CourseRequest";
 import { generateEnrollmentNumber } from "@/lib/services/enrollment-number.service";
 import { logAudit } from "@/lib/services/audit.service";
 import { hashPassword } from "@/lib/auth/session";
@@ -16,12 +17,23 @@ export async function GET() {
 
   try {
     await connectDB();
-    const pendingList = await StudentProfile.find({ registrationStatus: "pending" })
-      .populate("preferredCourseId")
-      .sort({ createdAt: -1 })
-      .lean();
+    const [pendingRegistrations, pendingCourseRequests] = await Promise.all([
+      StudentProfile.find({ registrationStatus: "pending" })
+        .populate("preferredCourseId")
+        .sort({ createdAt: -1 })
+        .lean(),
+      CourseRequest.find({ status: "pending" })
+        .populate("studentId")
+        .populate("courseId")
+        .sort({ createdAt: -1 })
+        .lean(),
+    ]);
 
-    return NextResponse.json({ success: true, registrations: pendingList });
+    return NextResponse.json({
+      success: true,
+      registrations: pendingRegistrations,
+      courseRequests: pendingCourseRequests,
+    });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "Failed to fetch registrations." },
@@ -38,20 +50,170 @@ export async function PATCH(req: NextRequest) {
     await connectDB();
     const body = await req.json();
     const {
+      type, // "student" | "course_request"
+      requestId,
       studentId,
       action,
       rejectionReason,
       agreedFee,
+      discountAmount,
       paymentType,
       installmentCount,
       password,
     } = body;
 
-    if (!studentId || !["approve", "reject"].includes(action)) {
+    if (!["approve", "reject"].includes(action)) {
       return NextResponse.json(
-        { error: "Student ID and valid action ('approve' or 'reject') required." },
+        { error: "Valid action ('approve' or 'reject') required." },
         { status: 400 }
       );
+    }
+
+    // =========================================================================
+    // BRANCH A: COURSE REQUEST (Existing Student applying for an extra course)
+    // =========================================================================
+    if (type === "course_request" || requestId) {
+      const courseReq = await CourseRequest.findById(requestId || studentId)
+        .populate("studentId")
+        .populate("courseId");
+
+      if (!courseReq) {
+        return NextResponse.json({ error: "Course request not found." }, { status: 404 });
+      }
+
+      if (courseReq.status !== "pending") {
+        return NextResponse.json(
+          { error: `Course request is already ${courseReq.status}.` },
+          { status: 400 }
+        );
+      }
+
+      const student = courseReq.studentId as any;
+      const course = courseReq.courseId as any;
+
+      if (action === "reject") {
+        courseReq.status = "rejected";
+        courseReq.rejectionReason = rejectionReason?.trim() || "Course request rejected by Administration.";
+        await courseReq.save();
+
+        await logAudit({
+          action: "COURSE_REQUEST_REJECTED",
+          performedBy: session.name || "Admin",
+          targetType: "CourseRequest",
+          targetId: courseReq._id.toString(),
+          details: { studentName: student.fullName, courseName: course.title, reason: courseReq.rejectionReason },
+        });
+
+        return NextResponse.json({ success: true, message: "Course request rejected." });
+      }
+
+      // ACTION: APPROVE COURSE REQUEST
+      const baseFee =
+        agreedFee !== undefined && agreedFee !== ""
+          ? Number(agreedFee)
+          : course.defaultFee;
+      const discount =
+        discountAmount !== undefined && discountAmount !== ""
+          ? Math.max(0, Number(discountAmount))
+          : 0;
+      const finalFee = Math.max(0, baseFee - discount);
+
+      const enrollmentNumber = await generateEnrollmentNumber();
+      const enrollmentDate = new Date();
+      const expectedCompletion = new Date(enrollmentDate);
+      const durationUnit = course.durationUnit || "months";
+      const durationVal = course.durationValue || course.durationMonths || 1;
+      if (durationUnit === "days") {
+        expectedCompletion.setDate(expectedCompletion.getDate() + durationVal);
+      } else {
+        expectedCompletion.setMonth(expectedCompletion.getMonth() + durationVal);
+      }
+
+      const durationText =
+        course.durationText ||
+        (durationUnit === "days"
+          ? `${durationVal} ${durationVal === 1 ? "Day" : "Days"}`
+          : `${durationVal} ${durationVal === 1 ? "Month" : "Months"}`);
+
+      const createdEnrollment = new Enrollment({
+        enrollmentNumber,
+        studentId: student._id,
+        courseId: course._id,
+        courseNameSnapshot: course.title,
+        durationMonthsSnapshot: course.durationMonths || 1,
+        durationSnapshot: durationText,
+        durationUnitSnapshot: durationUnit,
+        durationValueSnapshot: durationVal,
+        agreedFeeSnapshot: baseFee,
+        discountAmount: discount,
+        finalFee: finalFee,
+        enrollmentDate,
+        expectedCompletionDate: expectedCompletion,
+        enrollmentStatus: "active",
+        paymentType: paymentType === "installment" ? "installment" : "full",
+        totalFee: finalFee,
+        paidAmount: 0,
+        outstandingBalance: finalFee,
+        paymentStatus: "unpaid",
+        certificateStatus: "pending",
+      });
+
+      await createdEnrollment.save();
+
+      // Create installments if configured
+      if (paymentType === "installment" && installmentCount && Number(installmentCount) > 1) {
+        const numInst = Number(installmentCount);
+        const perInst = Math.round(finalFee / numInst);
+        for (let i = 1; i <= numInst; i++) {
+          const dueDate = new Date(enrollmentDate);
+          dueDate.setMonth(dueDate.getMonth() + (i - 1));
+          const amount = i === numInst ? finalFee - perInst * (numInst - 1) : perInst;
+
+          await Installment.create({
+            enrollmentId: createdEnrollment._id,
+            studentId: student._id,
+            installmentNumber: i,
+            amount,
+            paidAmount: 0,
+            dueDate,
+            status: "pending",
+          });
+        }
+      }
+
+      courseReq.status = "approved";
+      courseReq.enrollmentId = createdEnrollment._id;
+      await courseReq.save();
+
+      await logAudit({
+        action: "COURSE_REQUEST_APPROVED",
+        performedBy: session.name || "Admin",
+        targetType: "CourseRequest",
+        targetId: courseReq._id.toString(),
+        details: {
+          enrollmentNumber,
+          studentName: student.fullName,
+          courseName: course.title,
+          baseFee,
+          discount,
+          finalFee,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `Course admission approved! Student enrolled in ${course.title} (${enrollmentNumber}).`,
+        enrollment: createdEnrollment,
+        studentName: student.fullName,
+        courseName: course.title,
+      });
+    }
+
+    // =========================================================================
+    // BRANCH B: NEW STUDENT REGISTRATION APPLICATION (StudentProfile)
+    // =========================================================================
+    if (!studentId) {
+      return NextResponse.json({ error: "Student ID is required." }, { status: 400 });
     }
 
     const student = await StudentProfile.findById(studentId);
@@ -87,7 +249,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ success: true, message: "Registration rejected." });
     }
 
-    // ACTION: APPROVE
+    // ACTION: APPROVE NEW STUDENT
     // 1. Set or generate login credentials
     const studentPassword =
       password && password.trim().length >= 6
@@ -134,10 +296,15 @@ export async function PATCH(req: NextRequest) {
     if (student.preferredCourseId) {
       const course = await Course.findById(student.preferredCourseId);
       if (course) {
-        const fee =
+        const baseFee =
           agreedFee !== undefined && agreedFee !== ""
             ? Number(agreedFee)
             : course.defaultFee;
+        const discount =
+          discountAmount !== undefined && discountAmount !== ""
+            ? Math.max(0, Number(discountAmount))
+            : 0;
+        const finalFee = Math.max(0, baseFee - discount);
         const enrollmentNumber = await generateEnrollmentNumber();
 
         const enrollmentDate = new Date();
@@ -165,14 +332,16 @@ export async function PATCH(req: NextRequest) {
           durationSnapshot: durationText,
           durationUnitSnapshot: durationUnit,
           durationValueSnapshot: durationVal,
-          agreedFeeSnapshot: fee,
+          agreedFeeSnapshot: baseFee,
+          discountAmount: discount,
+          finalFee: finalFee,
           enrollmentDate,
           expectedCompletionDate: expectedCompletion,
           enrollmentStatus: "active",
           paymentType: paymentType === "installment" ? "installment" : "full",
-          totalFee: fee,
+          totalFee: finalFee,
           paidAmount: 0,
-          outstandingBalance: fee,
+          outstandingBalance: finalFee,
           paymentStatus: "unpaid",
           certificateStatus: "pending",
         });
@@ -186,11 +355,11 @@ export async function PATCH(req: NextRequest) {
           Number(installmentCount) > 1
         ) {
           const numInst = Number(installmentCount);
-          const perInst = Math.round(fee / numInst);
+          const perInst = Math.round(finalFee / numInst);
           for (let i = 1; i <= numInst; i++) {
             const dueDate = new Date(enrollmentDate);
             dueDate.setMonth(dueDate.getMonth() + (i - 1));
-            const amount = i === numInst ? fee - perInst * (numInst - 1) : perInst;
+            const amount = i === numInst ? finalFee - perInst * (numInst - 1) : perInst;
 
             await Installment.create({
               enrollmentId: createdEnrollment._id,
@@ -213,7 +382,9 @@ export async function PATCH(req: NextRequest) {
             enrollmentNumber,
             studentName: student.fullName,
             courseName: course.title,
-            fee,
+            baseFee,
+            discount,
+            finalFee,
           },
         });
       }
@@ -259,16 +430,20 @@ export async function DELETE(req: NextRequest) {
     await connectDB();
     const searchParams = req.nextUrl.searchParams;
     const id = searchParams.get("id");
+    const type = searchParams.get("type");
 
     if (!id) {
-      return NextResponse.json({ error: "Registration ID is required." }, { status: 400 });
+      return NextResponse.json({ error: "ID is required." }, { status: 400 });
+    }
+
+    if (type === "course_request") {
+      await CourseRequest.findByIdAndDelete(id);
+      return NextResponse.json({ success: true, message: "Course request purged successfully." });
     }
 
     await StudentProfile.findByIdAndDelete(id);
-
     return NextResponse.json({ success: true, message: "Registration purged successfully." });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to delete registration." }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to delete record." }, { status: 500 });
   }
 }
-

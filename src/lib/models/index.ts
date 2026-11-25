@@ -8,3 +8,4 @@ export * from "./Payment";
 export * from "./FeeReceipt";
 export * from "./Certificate";
 export * from "./AuditLog";
+export * from "./CourseRequest";

@@ -72,10 +72,12 @@ export async function POST(req: NextRequest) {
     if (existingStudent) {
       return NextResponse.json(
         {
+          existingStudent: existingStudent.registrationStatus === "approved",
+          isPending: existingStudent.registrationStatus === "pending",
           error:
             existingStudent.registrationStatus === "pending"
               ? "An application with this mobile number is already pending review with administration."
-              : "A registered student with this mobile number already exists. Please contact admin if you need credentials.",
+              : "A registered student profile with this mobile number already exists. If you want to enroll in an additional course, please sign in to your Student Portal.",
         },
         { status: 409 }
       );

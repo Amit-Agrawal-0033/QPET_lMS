@@ -39,6 +39,7 @@ export default function RegisterForm({ initialCourses = [] }: RegisterFormProps)
   const [loadingCourses, setLoadingCourses] = useState(initialCourses.length === 0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isExistingStudent, setIsExistingStudent] = useState(false);
   const [successData, setSuccessData] = useState<{ message: string; studentId: string } | null>(
     null
   );
@@ -100,6 +101,7 @@ export default function RegisterForm({ initialCourses = [] }: RegisterFormProps)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setIsExistingStudent(false);
 
     if (!formData.preferredCourseId) {
       setError("Please select a course to register for.");
@@ -117,7 +119,11 @@ export default function RegisterForm({ initialCourses = [] }: RegisterFormProps)
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Failed to submit registration.");
+        if (data.existingStudent) {
+          setIsExistingStudent(true);
+        } else {
+          setError(data.error || "Failed to submit registration.");
+        }
         setSubmitting(false);
         return;
       }
@@ -228,7 +234,30 @@ export default function RegisterForm({ initialCourses = [] }: RegisterFormProps)
         </p>
       </div>
 
-      {error && (
+      {isExistingStudent ? (
+        <div className="mb-6 p-5 rounded-2xl bg-blue-50/90 border border-[#3978E8]/30 text-xs text-[#173B70] space-y-3 shadow-xs relative z-10">
+          <div className="flex items-start gap-3">
+            <Info className="w-5 h-5 text-[#3978E8] shrink-0 mt-0.5" />
+            <div>
+              <span className="font-black text-sm block mb-1 text-[#173B70]">
+                You are Already an Enrolled QPET Student!
+              </span>
+              <p className="leading-relaxed font-normal text-[#173B70]/85">
+                A student account with mobile number <strong className="font-mono font-bold text-[#173B70]">{formData.mobileNumber}</strong> is already registered. To join an additional course, you do not need to register again. Simply sign in to your Student Portal to request another course without creating duplicate accounts.
+              </p>
+            </div>
+          </div>
+          <div className="pt-1">
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#173B70] via-[#3978E8] to-[#7654D6] hover:opacity-95 text-white font-bold text-xs shadow-sm transition-all"
+            >
+              <span>Sign In to Student Portal</span>
+              <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+            </Link>
+          </div>
+        </div>
+      ) : error ? (
         <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-950 flex items-start gap-3 relative z-10 shadow-xs">
           <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
           <div>
@@ -236,7 +265,7 @@ export default function RegisterForm({ initialCourses = [] }: RegisterFormProps)
             <span className="font-normal">{error}</span>
           </div>
         </div>
-      )}
+      ) : null}
 
       <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
         {/* ===================================================================== */}

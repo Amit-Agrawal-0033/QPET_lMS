@@ -367,6 +367,33 @@ export default function TrainerEnrollmentsPage() {
                 </div>
               </div>
 
+              {/* Dynamic Fee & Discount Summary */}
+              {(() => {
+                const selectedC = courses.find((c) => c._id === formData.courseId);
+                const baseF = formData.customFee !== "" ? Number(formData.customFee) : (selectedC?.defaultFee || 0);
+                const discF = Number(formData.discountAmount) || 0;
+                const netF = Math.max(0, baseF - discF);
+
+                return (
+                  <div className="p-3 bg-purple-50/60 border border-purple-200/80 rounded-xl space-y-1 text-xs">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-600">Base Fee:</span>
+                      <span className="font-semibold text-slate-900">₹{baseF.toLocaleString("en-IN")}</span>
+                    </div>
+                    {discF > 0 && (
+                      <div className="flex justify-between items-center text-emerald-700">
+                        <span>Discount:</span>
+                        <span className="font-bold">- ₹{discF.toLocaleString("en-IN")}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center pt-1 border-t border-purple-200/80 font-bold">
+                      <span className="text-slate-800">Final Net Fee:</span>
+                      <span className="text-purple-700 font-extrabold">₹{netF.toLocaleString("en-IN")}</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
