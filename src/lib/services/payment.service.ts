@@ -74,7 +74,12 @@ export async function recordPayment(input: RecordPaymentInput) {
     studentName: student.fullName,
     enrollmentNumber: enrollment.enrollmentNumber,
     courseName: enrollment.courseNameSnapshot,
-    totalCourseFee: enrollment.totalFee,
+    courseDuration:
+      enrollment.durationSnapshot ||
+      (enrollment.durationMonthsSnapshot ? `${enrollment.durationMonthsSnapshot} Months` : ""),
+    totalCourseFee: enrollment.agreedFeeSnapshot || enrollment.totalFee,
+    discountAmount: enrollment.discountAmount || 0,
+    finalCourseFee: enrollment.finalFee || enrollment.totalFee,
     previousPaidAmount,
     currentPaymentAmount,
     totalPaidAfterThis,

@@ -39,6 +39,7 @@ export default function TrainerEnrollmentsPage() {
     studentId: "",
     courseId: "",
     customFee: "",
+    discountAmount: "",
     paymentType: "full",
     installmentCount: "3",
     allowDuplicate: false,
@@ -176,6 +177,7 @@ export default function TrainerEnrollmentsPage() {
                   studentId: students.length > 0 ? students[0]._id : "",
                   courseId: courses.length > 0 ? courses[0]._id : "",
                   customFee: "",
+                  discountAmount: "",
                   paymentType: "full",
                   installmentCount: "3",
                   allowDuplicate: false,
@@ -338,17 +340,31 @@ export default function TrainerEnrollmentsPage() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Custom Agreed Fee (₹)
-                </label>
-                <input
-                  type="number"
-                  value={formData.customFee}
-                  onChange={(e) => setFormData({ ...formData, customFee: e.target.value })}
-                  placeholder="Leave empty for course standard fee"
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Custom Agreed Fee (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.customFee}
+                    onChange={(e) => setFormData({ ...formData, customFee: e.target.value })}
+                    placeholder="Standard fee"
+                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Discount Amount (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.discountAmount}
+                    onChange={(e) => setFormData({ ...formData, discountAmount: e.target.value })}
+                    placeholder="Optional discount"
+                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">

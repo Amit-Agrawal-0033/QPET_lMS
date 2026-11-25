@@ -8,7 +8,10 @@ export interface IFeeReceipt extends Document {
   studentName: string;
   enrollmentNumber: string;
   courseName: string;
+  courseDuration?: string;
   totalCourseFee: number;
+  discountAmount?: number;
+  finalCourseFee?: number;
   previousPaidAmount: number;
   currentPaymentAmount: number;
   totalPaidAfterThis: number;
@@ -65,9 +68,22 @@ const FeeReceiptSchema = new Schema<IFeeReceipt>(
       required: true,
       trim: true,
     },
+    courseDuration: {
+      type: String,
+      default: "",
+    },
     totalCourseFee: {
       type: Number,
       required: true,
+      min: 0,
+    },
+    discountAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    finalCourseFee: {
+      type: Number,
       min: 0,
     },
     previousPaidAmount: {

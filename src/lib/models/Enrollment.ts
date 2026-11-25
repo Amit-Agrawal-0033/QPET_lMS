@@ -10,6 +10,8 @@ export interface IEnrollment extends Document {
   durationUnitSnapshot?: "months" | "days";
   durationValueSnapshot?: number;
   agreedFeeSnapshot: number;
+  discountAmount?: number;
+  finalFee?: number;
   enrollmentDate: Date;
   expectedCompletionDate?: Date;
   enrollmentStatus: "active" | "completed" | "cancelled" | "dropped";
@@ -71,6 +73,15 @@ const EnrollmentSchema = new Schema<IEnrollment>(
     agreedFeeSnapshot: {
       type: Number,
       required: true,
+      min: 0,
+    },
+    discountAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    finalFee: {
+      type: Number,
       min: 0,
     },
     enrollmentDate: {

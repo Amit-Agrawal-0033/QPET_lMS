@@ -35,6 +35,7 @@ export default function AdminEnrollmentsPage() {
     studentId: "",
     courseId: "",
     customFee: "",
+    discountAmount: "",
     paymentType: "full",
     installmentCount: "3",
     allowDuplicate: false,
@@ -91,6 +92,7 @@ export default function AdminEnrollmentsPage() {
       studentId: students[0]?._id || "",
       courseId: courses[0]?._id || "",
       customFee: "",
+      discountAmount: "",
       paymentType: "full",
       installmentCount: "3",
       allowDuplicate: false,
@@ -402,17 +404,31 @@ export default function AdminEnrollmentsPage() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1.5">
-                  Agreed Course Fee (INR)
-                </label>
-                <input
-                  type="number"
-                  value={formData.customFee}
-                  onChange={(e) => setFormData({ ...formData, customFee: e.target.value })}
-                  placeholder="Leave blank to use course default fee"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1.5">
+                    Agreed Course Fee (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.customFee}
+                    onChange={(e) => setFormData({ ...formData, customFee: e.target.value })}
+                    placeholder="Course default fee"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1.5">
+                    Discount Amount (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.discountAmount}
+                    onChange={(e) => setFormData({ ...formData, discountAmount: e.target.value })}
+                    placeholder="Optional discount (₹)"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                  />
+                </div>
               </div>
 
               <div>
