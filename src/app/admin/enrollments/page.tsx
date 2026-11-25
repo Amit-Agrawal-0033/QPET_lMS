@@ -564,10 +564,12 @@ export default function AdminEnrollmentsPage() {
                     }
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                   >
-                    <option value="2">2 Installments</option>
-                    <option value="3">3 Installments</option>
-                    <option value="4">4 Installments</option>
-                    <option value="6">6 Installments</option>
+                    <option value="1">1 Installment (Full Settlement)</option>
+                    <option value="2">2 Monthly Installments (EMIs)</option>
+                    <option value="3">3 Monthly Installments (EMIs)</option>
+                    <option value="4">4 Monthly Installments (EMIs)</option>
+                    <option value="5">5 Monthly Installments (EMIs)</option>
+                    <option value="6">6 Monthly Installments (EMIs)</option>
                   </select>
                 </div>
               )}

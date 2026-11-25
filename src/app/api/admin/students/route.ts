@@ -93,6 +93,7 @@ export async function POST(req: NextRequest) {
       qualification,
       courseId,
       customFee,
+      discountAmount,
       paymentType,
       installmentCount,
       password,
@@ -174,6 +175,11 @@ export async function POST(req: NextRequest) {
           customFee !== undefined && customFee !== ""
             ? Number(customFee)
             : course.defaultFee;
+        const discount =
+          discountAmount !== undefined && discountAmount !== ""
+            ? Math.max(0, Number(discountAmount))
+            : 0;
+        const finalFee = Math.max(0, agreedFee - discount);
         const enrollmentNumber = await generateEnrollmentNumber();
 
         const enrollmentDate = new Date();
@@ -202,31 +208,33 @@ export async function POST(req: NextRequest) {
           durationUnitSnapshot: durationUnit,
           durationValueSnapshot: durationVal,
           agreedFeeSnapshot: agreedFee,
+          discountAmount: discount,
+          finalFee: finalFee,
           enrollmentDate,
           expectedCompletionDate: expectedCompletion,
           enrollmentStatus: "active",
           paymentType: paymentType === "installment" ? "installment" : "full",
-          totalFee: agreedFee,
+          totalFee: finalFee,
           paidAmount: 0,
-          outstandingBalance: agreedFee,
+          outstandingBalance: finalFee,
           paymentStatus: "unpaid",
           certificateStatus: "pending",
         });
 
         await createdEnrollment.save();
 
-        // Create installments if installment type
+        // Create installments if installment type (1 to 6 installments)
         if (
           paymentType === "installment" &&
           installmentCount &&
-          Number(installmentCount) > 1
+          Number(installmentCount) >= 1
         ) {
           const numInst = Number(installmentCount);
-          const perInst = Math.round(agreedFee / numInst);
+          const perInst = Math.round(finalFee / numInst);
           for (let i = 1; i <= numInst; i++) {
             const dueDate = new Date(enrollmentDate);
             dueDate.setMonth(dueDate.getMonth() + (i - 1));
-            const amount = i === numInst ? agreedFee - perInst * (numInst - 1) : perInst;
+            const amount = i === numInst ? finalFee - perInst * (numInst - 1) : perInst;
 
             await Installment.create({
               enrollmentId: createdEnrollment._id,

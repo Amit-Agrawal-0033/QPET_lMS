@@ -628,23 +628,25 @@ export default function AdminRegistrationsPage() {
                   </select>
                 </div>
 
-                {paymentType === "installment" && (
-                  <div>
-                    <label className="block text-slate-700 font-semibold mb-1.5">
-                      Installment Count
-                    </label>
-                    <select
-                      value={installmentCount}
-                      onChange={(e) => setInstallmentCount(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
-                    >
-                      <option value="2">2 Monthly Installments</option>
-                      <option value="3">3 Monthly Installments</option>
-                      <option value="4">4 Monthly Installments</option>
-                      <option value="6">6 Monthly Installments</option>
-                    </select>
-                  </div>
-                )}
+                    {paymentType === "installment" && (
+                      <div>
+                        <label className="block text-slate-700 font-semibold mb-1.5">
+                          Installment Count (1 to 6 EMIs)
+                        </label>
+                        <select
+                          value={installmentCount}
+                          onChange={(e) => setInstallmentCount(e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+                        >
+                          <option value="1">1 Installment (Full Settlement)</option>
+                          <option value="2">2 Monthly Installments (EMIs)</option>
+                          <option value="3">3 Monthly Installments (EMIs)</option>
+                          <option value="4">4 Monthly Installments (EMIs)</option>
+                          <option value="5">5 Monthly Installments (EMIs)</option>
+                          <option value="6">6 Monthly Installments (EMIs)</option>
+                        </select>
+                      </div>
+                    )}
               </div>
 
               {paymentType === "installment" && (

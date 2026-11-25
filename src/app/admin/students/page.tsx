@@ -52,6 +52,7 @@ export default function AdminStudentsPage() {
     qualification: "",
     courseId: "",
     customFee: "",
+    discountAmount: "",
     paymentType: "full",
     installmentCount: "3",
     password: "",
@@ -346,6 +347,7 @@ export default function AdminStudentsPage() {
               qualification: "",
               courseId: "",
               customFee: "",
+              discountAmount: "",
               paymentType: "full",
               installmentCount: "3",
               password: "",
@@ -1027,13 +1029,20 @@ export default function AdminStudentsPage() {
                     <select
                       name="courseId"
                       value={formData.courseId}
-                      onChange={(e) => setFormData({ ...formData, courseId: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => {
+                        const selectedC = courses.find((c) => c._id === e.target.value);
+                        setFormData({
+                          ...formData,
+                          courseId: e.target.value,
+                          customFee: selectedC ? String(selectedC.defaultFee) : "",
+                        });
+                      }}
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                     >
                       <option value="">-- No Enrollment Now --</option>
                       {courses.map((c) => (
                         <option key={c._id} value={c._id}>
-                          {c.title} ({c.code}) — ₹{c.defaultFee}
+                          {c.title} ({c.code}) — Default Fee: ₹{c.defaultFee}
                         </option>
                       ))}
                     </select>
@@ -1042,7 +1051,7 @@ export default function AdminStudentsPage() {
                   {formData.courseId && (
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Agreed Course Fee (INR)
+                        Agreed Course Fee (INR) *
                       </label>
                       <input
                         type="number"
@@ -1050,11 +1059,106 @@ export default function AdminStudentsPage() {
                         value={formData.customFee}
                         onChange={(e) => setFormData({ ...formData, customFee: e.target.value })}
                         placeholder="Course default fee"
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
                       />
                     </div>
                   )}
                 </div>
+
+                {formData.courseId && (
+                  <div className="space-y-3 pt-3 border-t border-slate-200/80">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          Discount / Concession Amount (INR)
+                        </label>
+                        <input
+                          type="number"
+                          name="discountAmount"
+                          value={formData.discountAmount}
+                          onChange={(e) => setFormData({ ...formData, discountAmount: e.target.value })}
+                          placeholder="Optional discount (₹)"
+                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          Payment Arrangement
+                        </label>
+                        <select
+                          name="paymentType"
+                          value={formData.paymentType}
+                          onChange={(e) => setFormData({ ...formData, paymentType: e.target.value })}
+                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                        >
+                          <option value="full">Full Payment Plan</option>
+                          <option value="installment">Installment / EMI Plan</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {formData.paymentType === "installment" && (
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                          Number of Installments (1 to 6 EMIs)
+                        </label>
+                        <select
+                          name="installmentCount"
+                          value={formData.installmentCount}
+                          onChange={(e) => setFormData({ ...formData, installmentCount: e.target.value })}
+                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                        >
+                          <option value="1">1 Installment (Full Settlement)</option>
+                          <option value="2">2 Monthly Installments (EMIs)</option>
+                          <option value="3">3 Monthly Installments (EMIs)</option>
+                          <option value="4">4 Monthly Installments (EMIs)</option>
+                          <option value="5">5 Monthly Installments (EMIs)</option>
+                          <option value="6">6 Monthly Installments (EMIs)</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Dynamic Net Fee & EMI Breakdown Summary */}
+                    {(() => {
+                      const baseFee = formData.customFee !== "" ? Number(formData.customFee) : 0;
+                      const discount = Number(formData.discountAmount) || 0;
+                      const netFee = Math.max(0, baseFee - discount);
+                      const instCount = Number(formData.installmentCount) || 1;
+                      const perInst = Math.round(netFee / instCount);
+
+                      return (
+                        <div className="space-y-2 pt-1">
+                          <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl space-y-1 text-xs">
+                            <div className="flex justify-between items-center text-slate-600">
+                              <span>Base Course Fee:</span>
+                              <span className="font-semibold text-slate-900">₹{baseFee.toLocaleString("en-IN")}</span>
+                            </div>
+                            {discount > 0 && (
+                              <div className="flex justify-between items-center text-emerald-700 font-medium">
+                                <span>Discount / Concession:</span>
+                                <span>- ₹{discount.toLocaleString("en-IN")}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between items-center pt-1 border-t border-blue-200/80 font-bold">
+                              <span className="text-slate-800">Final Net Payable Fee:</span>
+                              <span className="text-blue-700 text-sm font-black">₹{netFee.toLocaleString("en-IN")}</span>
+                            </div>
+                          </div>
+
+                          {formData.paymentType === "installment" && (
+                            <div className="p-2.5 bg-amber-50/70 border border-amber-200/80 rounded-xl text-[11px] text-amber-900 flex items-center justify-between font-semibold">
+                              <span>Monthly EMI Schedule:</span>
+                              <span>
+                                {formData.installmentCount} Monthly EMIs of ~₹{perInst.toLocaleString("en-IN")} each
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">

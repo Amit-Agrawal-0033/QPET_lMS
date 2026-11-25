@@ -15,10 +15,13 @@ export async function GET() {
 
     const [enrollments, payments, installments] = await Promise.all([
       Enrollment.find({ studentId }).lean(),
-      Payment.find({ studentId }).sort({ paymentDate: -1 }).lean(),
+      Payment.find({ studentId })
+        .populate("receiptId", "receiptNumber")
+        .sort({ paymentDate: -1 })
+        .lean(),
       Installment.find({ studentId })
         .populate("enrollmentId", "enrollmentNumber courseNameSnapshot")
-        .sort({ dueDate: 1 })
+        .sort({ installmentNumber: 1, dueDate: 1 })
         .lean(),
     ]);
 
