@@ -52,66 +52,65 @@ export function generateReceiptPdf(data: ReceiptPdfData): Buffer {
   const currencySymbol = fontLoaded ? "₹" : "Rs.";
 
   // 2. QPET Brand Logo
-  const logoPath =
-    path.join(process.cwd(), "public/images/qpet-logo-pdf.png");
-  const fallbackLogoPath =
-    path.join(process.cwd(), "public/images/QPET PNG.png");
+  const receiptLogoPath = path.join(process.cwd(), "public/images/qpet-receipt-logo.png");
+  const defaultLogoPath = path.join(process.cwd(), "public/images/QPET PNG.png");
 
-  const targetLogo = fs.existsSync(logoPath)
-    ? logoPath
-    : fs.existsSync(fallbackLogoPath)
-    ? fallbackLogoPath
+  const targetLogo = fs.existsSync(receiptLogoPath)
+    ? receiptLogoPath
+    : fs.existsSync(defaultLogoPath)
+    ? defaultLogoPath
     : null;
 
   if (targetLogo) {
     try {
       const logoBase64 = fs.readFileSync(targetLogo).toString("base64");
-      doc.addImage(logoBase64, "PNG", 14, 10, 20, 20);
+      // Cropped aspect ratio 1004:1115 (w: 22mm, h: 24.5mm)
+      doc.addImage(logoBase64, "PNG", 14, 8, 22, 24.5);
     } catch {
       // If logo cannot be embedded, proceed without crashing
     }
   }
 
   // 3. Institution Header Typography
-  doc.setFont(primaryFont, "bold");
-  doc.setFontSize(17);
-  doc.setTextColor(30, 41, 59); // Deep Navy (#1E293B)
-  doc.text("QPET Education and IT Institute", 38, 18);
+  doc.setFont("times", "bold");
+  doc.setFontSize(20);
+  doc.setTextColor(30, 41, 75); // Deep Indigo/Navy (#1E294B)
+  doc.text("Qplus Education and Training", 39, 17.5);
 
-  doc.setFont(primaryFont, "normal");
-  doc.setFontSize(8.5);
+  doc.setFont("times", "italic");
+  doc.setFontSize(9.5);
   doc.setTextColor(100, 116, 139); // Slate Grey (#64748B)
-  doc.text("Quality Professional Education and Training", 38, 23.5);
+  doc.text("Cultivating Skills for Tomorrow's Leaders", 39, 23.5);
 
   // 4. Accent Mustard-Gold Horizontal Divider Line
   doc.setDrawColor(217, 119, 6); // #D97706
-  doc.setLineWidth(1.2);
-  doc.line(14, 34, pageWidth - 14, 34);
+  doc.setLineWidth(1.0);
+  doc.line(14, 35, pageWidth - 14, 35);
 
   // 5. Document Title
-  doc.setFont(primaryFont, "bold");
-  doc.setFontSize(20);
-  doc.setTextColor(30, 41, 59);
-  doc.text("FEE RECEIPT", 14, 45);
+  doc.setFont("times", "bold");
+  doc.setFontSize(21);
+  doc.setTextColor(30, 41, 75);
+  doc.text("FEE RECEIPT", 14, 46);
 
   doc.setFont(primaryFont, "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(100, 116, 139);
-  doc.text("Official Fee Receipt", pageWidth - 14, 45, { align: "right" });
+  doc.text("Official Fee Receipt", pageWidth - 14, 46, { align: "right" });
 
   // 6. Metadata Grid Box (4 Rows x 2 Columns)
   doc.setDrawColor(226, 232, 240); // #E2E8F0
   doc.setLineWidth(0.3);
-  doc.roundedRect(14, 52, 182, 44, 2, 2, "D");
+  doc.roundedRect(14, 52, 182, 46, 2, 2, "D");
 
   // Horizontal divider lines inside box
-  doc.line(14, 63, pageWidth - 14, 63);
-  doc.line(14, 74, pageWidth - 14, 74);
-  doc.line(14, 85, pageWidth - 14, 85);
+  doc.line(14, 63.5, pageWidth - 14, 63.5);
+  doc.line(14, 75, pageWidth - 14, 75);
+  doc.line(14, 86.5, pageWidth - 14, 86.5);
 
   // Vertical divider in the middle
   const midX = 14 + 182 / 2; // 105mm
-  doc.line(midX, 52, midX, 96);
+  doc.line(midX, 52, midX, 98);
 
   // Date Formatting (e.g. "23 November 2026")
   const dateObj = new Date(data.receiptDate);
@@ -150,7 +149,7 @@ export function generateReceiptPdf(data: ReceiptPdfData): Buffer {
     doc.setFont(primaryFont, "bold");
     doc.setFontSize(9);
     doc.setTextColor(15, 23, 42);
-    doc.text(value, x, y + 4.5);
+    doc.text(value, x, y + 5);
   };
 
   // Row 1
@@ -158,21 +157,21 @@ export function generateReceiptPdf(data: ReceiptPdfData): Buffer {
   drawMetadataCell("DATE", formattedDate, midX + 4, 56.5);
 
   // Row 2
-  drawMetadataCell("STUDENT NAME", data.studentName.toUpperCase(), 18, 67.5);
-  drawMetadataCell("ENROLLMENT NUMBER", data.enrollmentNumber, midX + 4, 67.5);
+  drawMetadataCell("STUDENT NAME", data.studentName.toUpperCase(), 18, 68);
+  drawMetadataCell("ENROLLMENT NUMBER", data.enrollmentNumber, midX + 4, 68);
 
   // Row 3
-  drawMetadataCell("COURSE NAME", data.courseName, 18, 78.5);
-  drawMetadataCell("PAYMENT MODE", paymentMode, midX + 4, 78.5);
+  drawMetadataCell("COURSE NAME", data.courseName, 18, 79.5);
+  drawMetadataCell("PAYMENT MODE", paymentMode, midX + 4, 79.5);
 
   // Row 4
   drawMetadataCell(
     "TRANSACTION REFERENCE NUMBER",
     data.transactionReference || paymentMode || "Cash",
     18,
-    89.5
+    91
   );
-  drawMetadataCell("ISSUED BY", data.issuedBy || "Accounts Desk", midX + 4, 89.5);
+  drawMetadataCell("ISSUED BY", data.issuedBy || "Accounts Desk", midX + 4, 91);
 
   // 7. Particulars Table (3 Columns)
   const totalAgreed = Number(data.totalCourseFee) || 0;
@@ -191,12 +190,12 @@ export function generateReceiptPdf(data: ReceiptPdfData): Buffer {
   const duration = data.courseDuration || "—";
 
   autoTable(doc, {
-    startY: 104,
+    startY: 106,
     margin: { left: 14, right: 14 },
     theme: "plain",
     head: [["PARTICULARS", "DURATION", `AMOUNT (${currencySymbol})`]],
     headStyles: {
-      fillColor: [30, 41, 59], // Dark Navy #1E293B
+      fillColor: [30, 41, 75], // Deep Indigo / Dark Navy (#1E294B)
       textColor: [255, 255, 255],
       font: primaryFont,
       fontStyle: "bold",
@@ -211,7 +210,7 @@ export function generateReceiptPdf(data: ReceiptPdfData): Buffer {
     styles: {
       font: primaryFont,
       fontSize: 8.5,
-      cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
+      cellPadding: { top: 3.2, bottom: 3.2, left: 4, right: 4 },
       textColor: [30, 41, 59],
       lineWidth: { bottom: 0.2 },
       lineColor: [241, 245, 249],
@@ -250,9 +249,9 @@ export function generateReceiptPdf(data: ReceiptPdfData): Buffer {
     ],
   });
 
-  const summaryY = (doc as any).lastAutoTable.finalY + 10;
+  const summaryY = (doc as any).lastAutoTable.finalY + 12;
 
-  // 8. Status Badge & Outstanding Balance
+  // 8. Status Badge
   doc.setFont(primaryFont, "bold");
   doc.setFontSize(7.5);
   doc.setTextColor(100, 116, 139);
@@ -274,29 +273,13 @@ export function generateReceiptPdf(data: ReceiptPdfData): Buffer {
     doc.setFillColor(254, 243, 199); // Amber pill (#FEF3C7)
     doc.setDrawColor(252, 211, 77); // #FCD34D
     doc.setLineWidth(0.4);
-    doc.roundedRect(29, summaryY, 32, 6.5, 3, 3, "FD");
+    doc.roundedRect(29, summaryY, 34, 6.5, 3, 3, "FD");
 
     doc.setFont(primaryFont, "bold");
     doc.setFontSize(7.5);
     doc.setTextColor(146, 64, 14); // #92400E
-    doc.text("PARTIALLY PAID", 45, summaryY + 4.3, { align: "center" });
+    doc.text("PARTIALLY PAID", 46, summaryY + 4.3, { align: "center" });
   }
-
-  // Outstanding Balance
-  const statusEndOffset = isFullyPaid ? 65 : 69;
-  doc.setFont(primaryFont, "bold");
-  doc.setFontSize(7.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text("Outstanding Balance", statusEndOffset, summaryY + 4.5);
-
-  doc.setFont(primaryFont, "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(30, 41, 59);
-  doc.text(
-    `${currencySymbol} ${balance.toLocaleString("en-IN")}`,
-    statusEndOffset + 30,
-    summaryY + 4.5
-  );
 
   // 9. Remarks & Signature Block
   const remarksText = data.remarks?.trim()
@@ -311,12 +294,12 @@ export function generateReceiptPdf(data: ReceiptPdfData): Buffer {
   const sigLineY = summaryY + 6;
   doc.setDrawColor(203, 213, 225);
   doc.setLineWidth(0.5);
-  doc.line(pageWidth - 70, sigLineY, pageWidth - 14, sigLineY);
+  doc.line(pageWidth - 72, sigLineY, pageWidth - 14, sigLineY);
 
   doc.setFont(primaryFont, "bold");
   doc.setFontSize(8.5);
   doc.setTextColor(30, 41, 59);
-  doc.text("Authorized Signatory", pageWidth - 42, sigLineY + 4.5, {
+  doc.text("Authorized Signatory", pageWidth - 43, sigLineY + 4.5, {
     align: "center",
   });
 
@@ -325,13 +308,13 @@ export function generateReceiptPdf(data: ReceiptPdfData): Buffer {
   doc.setTextColor(100, 116, 139);
   doc.text(
     "QPET Accounts and Verification Wing",
-    pageWidth - 42,
+    pageWidth - 43,
     sigLineY + 8.5,
     { align: "center" }
   );
 
   // 10. Full-Width Bottom Bar
-  doc.setFillColor(30, 41, 59); // #1E293B
+  doc.setFillColor(30, 41, 75); // #1E294B
   doc.rect(0, 283, pageWidth, 14, "F");
 
   doc.setFont(primaryFont, "normal");
