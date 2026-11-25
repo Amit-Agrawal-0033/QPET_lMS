@@ -46,6 +46,7 @@ export default function TrainerEnrollmentsPage() {
   });
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -64,9 +65,6 @@ export default function TrainerEnrollmentsPage() {
     currentUser?.role === "admin" ||
     !!currentUser?.permissions?.createEnrollments ||
     !!currentUser?.permissions?.editEnrollments;
-
-  const canEditEnrollments =
-    currentUser?.role === "admin" || !!currentUser?.permissions?.editEnrollments;
 
   const fetchEnrollments = async () => {
     try {
@@ -100,9 +98,66 @@ export default function TrainerEnrollmentsPage() {
     }
   };
 
+  const openCreateModal = () => {
+    const firstStudent = students[0];
+    const activeCourseIds = new Set(
+      (firstStudent?.enrollments || [])
+        .filter((e: any) => e.enrollmentStatus === "active")
+        .map((e: any) => e.courseId?._id || e.courseId)
+    );
+    const nextCourse = courses.find((c) => !activeCourseIds.has(c._id)) || courses[0];
+
+    setFormData({
+      studentId: firstStudent?._id || "",
+      courseId: nextCourse?._id || "",
+      customFee: nextCourse?.defaultFee !== undefined ? String(nextCourse.defaultFee) : "",
+      discountAmount: "",
+      paymentType: "full",
+      installmentCount: "3",
+      allowDuplicate: false,
+    });
+    setModalError(null);
+    setDuplicateWarning(null);
+    setIsModalOpen(true);
+  };
+
+  const handleStudentSelect = (stId: string) => {
+    const selectedStudent = students.find((s) => s._id === stId);
+    const activeCourseIds = new Set(
+      (selectedStudent?.enrollments || [])
+        .filter((e: any) => e.enrollmentStatus === "active")
+        .map((e: any) => e.courseId?._id || e.courseId)
+    );
+    const nextCourse = courses.find((c) => !activeCourseIds.has(c._id)) || courses[0];
+
+    setFormData((prev) => ({
+      ...prev,
+      studentId: stId,
+      courseId: nextCourse?._id || prev.courseId,
+      customFee: nextCourse?.defaultFee !== undefined ? String(nextCourse.defaultFee) : prev.customFee,
+      discountAmount: "",
+      allowDuplicate: false,
+    }));
+    setDuplicateWarning(null);
+    setModalError(null);
+  };
+
+  const handleCourseSelect = (cId: string) => {
+    const selectedCourse = courses.find((c) => c._id === cId);
+    setFormData((prev) => ({
+      ...prev,
+      courseId: cId,
+      customFee: selectedCourse?.defaultFee !== undefined ? String(selectedCourse.defaultFee) : prev.customFee,
+      allowDuplicate: false,
+    }));
+    setDuplicateWarning(null);
+    setModalError(null);
+  };
+
   const handleEnrollSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setModalError(null);
+    setDuplicateWarning(null);
     setSaving(true);
 
     try {
@@ -114,7 +169,11 @@ export default function TrainerEnrollmentsPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        setModalError(data.error || "Failed to create enrollment.");
+        if (data.isDuplicate) {
+          setDuplicateWarning(data.error);
+        } else {
+          setModalError(data.error || "Failed to create enrollment.");
+        }
         setSaving(false);
         return;
       }
@@ -171,19 +230,7 @@ export default function TrainerEnrollmentsPage() {
 
           {canCreateEnrollments && (
             <button
-              onClick={() => {
-                setModalError(null);
-                setFormData({
-                  studentId: students.length > 0 ? students[0]._id : "",
-                  courseId: courses.length > 0 ? courses[0]._id : "",
-                  customFee: "",
-                  discountAmount: "",
-                  paymentType: "full",
-                  installmentCount: "3",
-                  allowDuplicate: false,
-                });
-                setIsModalOpen(true);
-              }}
+              onClick={openCreateModal}
               className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-purple-600/20 transition-all cursor-pointer shrink-0"
             >
               <Plus className="w-4 h-4" />
@@ -200,63 +247,60 @@ export default function TrainerEnrollmentsPage() {
         </div>
       )}
 
+      {/* Grid of Cards */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <div
-              key={i}
-              className="h-44 bg-white border border-slate-200/70 rounded-2xl animate-pulse"
-            />
+            <div key={i} className="h-44 bg-white border border-slate-200/80 rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center">
-          <FileCheck2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-sm font-bold text-slate-700">No enrollments found</h3>
-          <p className="text-xs text-slate-400 mt-1">Try adjusting your search criteria</p>
+        <div className="text-center py-12 bg-white border border-slate-200/80 rounded-2xl p-6">
+          <FileCheck2 className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+          <p className="text-xs text-slate-500">No student enrollments found.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((en) => (
             <div
               key={en._id}
-              className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+              className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
             >
               <div>
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <span className="px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 font-mono font-bold text-xs border border-purple-200/60">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="font-mono text-xs px-2.5 py-0.5 rounded-lg bg-purple-50 text-purple-700 font-bold border border-purple-200/60">
                     {en.enrollmentNumber}
                   </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <CheckCircle2 className="w-3 h-3" />
-                    {en.enrollmentStatus === "active" ? "Active Batch" : en.enrollmentStatus}
+                  <span
+                    className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                      en.paymentStatus === "paid"
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                        : en.paymentStatus === "partially_paid"
+                        ? "bg-amber-50 text-amber-700 border border-amber-200"
+                        : "bg-rose-50 text-rose-700 border border-rose-200"
+                    }`}
+                  >
+                    {en.paymentStatus ? en.paymentStatus.replace("_", " ") : "unpaid"}
                   </span>
                 </div>
 
-                <h3 className="text-sm font-bold text-slate-900">
+                <h3 className="text-sm font-bold text-slate-900 mt-1">
                   {en.studentId?.fullName || "Student"}
                 </h3>
-                <p className="text-xs text-purple-700 font-semibold mt-0.5">
-                  {en.courseNameSnapshot || "Assigned Course"}
+                <p className="text-xs text-slate-500 font-mono">
+                  {en.studentId?.mobileNumber || "—"}
                 </p>
 
-                <div className="mt-4 pt-3 border-t border-slate-100 space-y-1.5 text-xs text-slate-600">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Mobile:</span>
-                    <span className="font-mono text-slate-700">
-                      {en.studentId?.mobileNumber || "N/A"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Duration:</span>
-                    <span>{en.durationSnapshot || `${en.durationMonthsSnapshot || 3} Months`}</span>
-                  </div>
+                <div className="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2">
+                  <BookOpen className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                  <span className="text-xs font-semibold text-slate-800 line-clamp-1">
+                    {en.courseNameSnapshot || "Course"}
+                  </span>
                 </div>
               </div>
 
-              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                <span>
                   {new Date(en.enrollmentDate).toLocaleDateString("en-IN", {
                     day: "numeric",
                     month: "short",
@@ -282,8 +326,8 @@ export default function TrainerEnrollmentsPage() {
                   <FileCheck2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Assign Course Enrollment</h3>
-                  <p className="text-xs text-slate-500">Enroll student into an active training syllabus</p>
+                  <h3 className="text-base font-bold text-slate-900">Create Course Enrollment</h3>
+                  <p className="text-xs text-slate-500">Assign course and generate sequential enrollment number</p>
                 </div>
               </div>
               <button
@@ -293,6 +337,27 @@ export default function TrainerEnrollmentsPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {duplicateWarning && (
+              <div className="mt-4 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-2">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block font-semibold">Duplicate Enrollment Notice</strong>
+                    <span>{duplicateWarning}</span>
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 pt-1 font-semibold cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.allowDuplicate}
+                    onChange={(e) => setFormData({ ...formData, allowDuplicate: e.target.checked })}
+                    className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500"
+                  />
+                  <span>Authorize and create duplicate enrollment anyway</span>
+                </label>
+              </div>
+            )}
 
             {modalError && (
               <div className="mt-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
@@ -304,12 +369,12 @@ export default function TrainerEnrollmentsPage() {
             <form onSubmit={handleEnrollSubmit} className="mt-5 space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Select Student *
+                  Select Approved Student *
                 </label>
                 <select
                   required
                   value={formData.studentId}
-                  onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                  onChange={(e) => handleStudentSelect(e.target.value)}
                   className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none"
                 >
                   <option value="">-- Choose Student --</option>
@@ -319,6 +384,31 @@ export default function TrainerEnrollmentsPage() {
                     </option>
                   ))}
                 </select>
+
+                {(() => {
+                  const selectedStudent = students.find((s) => s._id === formData.studentId);
+                  const activeEnrs = (selectedStudent?.enrollments || []).filter(
+                    (e: any) => e.enrollmentStatus === "active"
+                  );
+                  if (activeEnrs.length > 0) {
+                    return (
+                      <div className="mt-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 flex items-center justify-between flex-wrap gap-2">
+                        <span className="text-slate-500 font-medium">Currently Enrolled:</span>
+                        <div className="flex gap-1.5 flex-wrap">
+                          {activeEnrs.map((e: any) => (
+                            <span
+                              key={e._id}
+                              className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-semibold border border-purple-200/60"
+                            >
+                              {e.courseNameSnapshot || "Course"} ({e.enrollmentNumber})
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
 
               <div>
@@ -328,13 +418,13 @@ export default function TrainerEnrollmentsPage() {
                 <select
                   required
                   value={formData.courseId}
-                  onChange={(e) => setFormData({ ...formData, courseId: e.target.value })}
+                  onChange={(e) => handleCourseSelect(e.target.value)}
                   className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none"
                 >
                   <option value="">-- Choose Course --</option>
                   {courses.map((c) => (
                     <option key={c._id} value={c._id}>
-                      {c.title} ({c.code}) - ₹{c.defaultFee}
+                      {c.title} ({c.code}) — Default Fee: ₹{c.defaultFee}
                     </option>
                   ))}
                 </select>
@@ -343,7 +433,7 @@ export default function TrainerEnrollmentsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Custom Agreed Fee (₹)
+                    Agreed Course Fee (₹)
                   </label>
                   <input
                     type="number"
@@ -373,26 +463,79 @@ export default function TrainerEnrollmentsPage() {
                 const baseF = formData.customFee !== "" ? Number(formData.customFee) : (selectedC?.defaultFee || 0);
                 const discF = Number(formData.discountAmount) || 0;
                 const netF = Math.max(0, baseF - discF);
+                const instC = Number(formData.installmentCount) || 1;
+                const perInst = Math.round(netF / instC);
 
                 return (
-                  <div className="p-3 bg-purple-50/60 border border-purple-200/80 rounded-xl space-y-1 text-xs">
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-600">Base Fee:</span>
-                      <span className="font-semibold text-slate-900">₹{baseF.toLocaleString("en-IN")}</span>
+                  <div className="space-y-2">
+                    <div className="p-3 bg-purple-50/60 border border-purple-200/80 rounded-xl space-y-1 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-600">Base Agreed Fee:</span>
+                        <span className="font-semibold text-slate-900">₹{baseF.toLocaleString("en-IN")}</span>
+                      </div>
+                      {discF > 0 && (
+                        <div className="flex justify-between items-center text-emerald-700">
+                          <span>Discount / Concession:</span>
+                          <span className="font-bold">- ₹{discF.toLocaleString("en-IN")}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center pt-1 border-t border-purple-200/80 font-bold">
+                        <span className="text-slate-800">Final Net Payable Fee:</span>
+                        <span className="text-purple-700 text-sm font-black">₹{netF.toLocaleString("en-IN")}</span>
+                      </div>
                     </div>
-                    {discF > 0 && (
-                      <div className="flex justify-between items-center text-emerald-700">
-                        <span>Discount:</span>
-                        <span className="font-bold">- ₹{discF.toLocaleString("en-IN")}</span>
+
+                    {formData.paymentType === "installment" && (
+                      <div className="p-2.5 bg-amber-50/70 border border-amber-200/80 rounded-xl text-[11px] text-amber-900 flex items-center justify-between font-medium">
+                        <span>Installment Schedule:</span>
+                        <span className="font-bold">
+                          {formData.installmentCount} Monthly Payments of ~₹{perInst.toLocaleString("en-IN")} each
+                        </span>
                       </div>
                     )}
-                    <div className="flex justify-between items-center pt-1 border-t border-purple-200/80 font-bold">
-                      <span className="text-slate-800">Final Net Fee:</span>
-                      <span className="text-purple-700 font-extrabold">₹{netF.toLocaleString("en-IN")}</span>
-                    </div>
                   </div>
                 );
               })()}
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Payment Arrangement
+                </label>
+                <select
+                  value={formData.paymentType}
+                  onChange={(e) => setFormData({ ...formData, paymentType: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none"
+                >
+                  <option value="full">Full Payment Plan</option>
+                  <option value="installment">Installment-Based Plan</option>
+                </select>
+              </div>
+
+              {formData.paymentType === "installment" && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Number of Installments
+                  </label>
+                  <select
+                    value={formData.installmentCount}
+                    onChange={(e) =>
+                      setFormData({ ...formData, installmentCount: e.target.value })
+                    }
+                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none"
+                  >
+                    <option value="1">1 Installment (Full Settlement)</option>
+                    <option value="2">2 Monthly Installments (EMIs)</option>
+                    <option value="3">3 Monthly Installments (EMIs)</option>
+                    <option value="4">4 Monthly Installments (EMIs)</option>
+                    <option value="5">5 Monthly Installments (EMIs)</option>
+                    <option value="6">6 Monthly Installments (EMIs)</option>
+                  </select>
+                </div>
+              )}
+
+              <p className="text-[11px] text-slate-500">
+                A permanent enrollment number (format: <strong className="text-slate-800">QPET-YYYY-NNNNN</strong>) will be generated atomically upon submission.
+              </p>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                 <button

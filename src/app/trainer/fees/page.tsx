@@ -29,7 +29,7 @@ function TrainerFeesContent() {
   const [payments, setPayments] = useState<any[]>([]);
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [installments, setInstallments] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<"payments" | "installments">("payments");
+  const [activeTab, setActiveTab] = useState<"passbook" | "installments" | "payments">("passbook");
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -119,6 +119,33 @@ function TrainerFeesContent() {
   const selectedEnrollment = enrollments.find((e) => e._id === formData.enrollmentId);
 
   const openRecordModal = () => {
+    setError(null);
+    setNewReceiptResult(null);
+    setIsModalOpen(true);
+  };
+
+  const paySpecificInstallment = (inst: any) => {
+    const dueAmount = (inst.amount || 0) - (inst.paidAmount || 0);
+    setFormData({
+      enrollmentId: inst.enrollmentId?._id || inst.enrollmentId,
+      amount: String(dueAmount > 0 ? dueAmount : inst.amount),
+      paymentMethod: "upi",
+      transactionReference: "",
+      remarks: `Payment for Installment #${inst.installmentNumber}`,
+    });
+    setError(null);
+    setNewReceiptResult(null);
+    setIsModalOpen(true);
+  };
+
+  const payEnrollmentBalance = (enr: any) => {
+    setFormData({
+      enrollmentId: enr._id,
+      amount: String(enr.outstandingBalance > 0 ? enr.outstandingBalance : ""),
+      paymentMethod: "upi",
+      transactionReference: "",
+      remarks: `Fee settlement for ${enr.courseNameSnapshot}`,
+    });
     setError(null);
     setNewReceiptResult(null);
     setIsModalOpen(true);
@@ -257,228 +284,341 @@ function TrainerFeesContent() {
         </div>
       </div>
 
-      {/* Controls Bar: Tabs & Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200">
-        <div className="flex gap-6 text-xs font-semibold">
-          <button
-            onClick={() => setActiveTab("payments")}
-            className={`pb-3.5 transition-all flex items-center gap-2 text-xs ${
-              activeTab === "payments"
-                ? "text-purple-600 border-b-2 border-purple-600 font-bold"
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <Receipt className="w-4 h-4" />
-            <span>Recorded Payments ({payments.length})</span>
-          </button>
+      {/* Controls Bar: Segmented Tabs */}
+      <div className="flex border-b border-slate-200 gap-4 sm:gap-8 text-xs font-semibold overflow-x-auto">
+        <button
+          onClick={() => setActiveTab("passbook")}
+          className={`pb-3.5 transition-all flex items-center gap-2 text-xs shrink-0 ${
+            activeTab === "passbook"
+              ? "text-purple-600 border-b-2 border-purple-600 font-bold"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <CreditCard className="w-4 h-4" />
+          <span>Course EMI Passbooks ({enrollments.length})</span>
+        </button>
 
-          <button
-            onClick={() => setActiveTab("installments")}
-            className={`pb-3.5 transition-all flex items-center gap-2 text-xs ${
-              activeTab === "installments"
-                ? "text-purple-600 border-b-2 border-purple-600 font-bold"
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <Clock className="w-4 h-4" />
-            <span>Installment Schedules ({installments.length})</span>
-          </button>
-        </div>
+        <button
+          onClick={() => setActiveTab("installments")}
+          className={`pb-3.5 transition-all flex items-center gap-2 text-xs shrink-0 ${
+            activeTab === "installments"
+              ? "text-purple-600 border-b-2 border-purple-600 font-bold"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <Clock className="w-4 h-4" />
+          <span>All Installment Schedules ({installments.length})</span>
+        </button>
 
-        <div className="relative pb-3 sm:pb-0 w-full sm:w-64">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search student or receipt..."
-            className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-          />
-        </div>
+        <button
+          onClick={() => setActiveTab("payments")}
+          className={`pb-3.5 transition-all flex items-center gap-2 text-xs shrink-0 ${
+            activeTab === "payments"
+              ? "text-purple-600 border-b-2 border-purple-600 font-bold"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <Receipt className="w-4 h-4" />
+          <span>Recorded Payments ({payments.length})</span>
+        </button>
       </div>
 
-      {/* Tab: Payments List */}
-      {activeTab === "payments" && (
-        <div className="rounded-2xl bg-white border border-slate-200/80 overflow-hidden shadow-xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-600">
-              <thead className="bg-slate-50/80 text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200/80 font-semibold">
-                <tr>
-                  <th className="py-3.5 px-4">Receipt Number</th>
-                  <th className="py-3.5 px-4">Student & Enrollment</th>
-                  <th className="py-3.5 px-4">Amount Paid</th>
-                  <th className="py-3.5 px-4">Method & Ref</th>
-                  <th className="py-3.5 px-4">Payment Date</th>
-                  <th className="py-3.5 px-4">Recorded By</th>
-                  <th className="py-3.5 px-4 text-right">Receipt PDF</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-normal">
-                {loading ? (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-400">
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <div className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
-                        <span>Loading payment transactions...</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : filteredPayments.length > 0 ? (
-                  filteredPayments.map((p) => (
-                    <tr key={p._id} className="hover:bg-purple-50/30 transition-colors">
-                      <td className="py-3.5 px-4 font-mono font-bold text-purple-700 text-xs">
-                        {p.receiptNumber || "N/A"}
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        <p className="font-bold text-slate-900 text-xs">{p.studentId?.fullName}</p>
-                        <p className="font-mono text-purple-600 text-[11px]">
-                          {p.enrollmentId?.enrollmentNumber}
-                        </p>
-                        {p.enrollmentId?.courseNameSnapshot && (
-                          <p className="text-[10px] text-slate-500 mt-0.5 truncate max-w-[180px]">
-                            {p.enrollmentId.courseNameSnapshot}
-                          </p>
-                        )}
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        <span className="font-bold text-slate-900 text-sm">
-                          ₹{p.amount.toLocaleString("en-IN")}
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-700 border border-slate-200">
-                          {p.paymentMethod}
-                        </span>
-                        {p.transactionReference && (
-                          <p className="font-mono text-[10px] text-slate-500 mt-0.5">
-                            Ref: {p.transactionReference}
-                          </p>
-                        )}
-                      </td>
-
-                      <td className="py-3.5 px-4 text-slate-600">
-                        {new Date(p.paymentDate).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </td>
-
-                      <td className="py-3.5 px-4 text-slate-500 text-[11px]">
-                        {p.recordedByAdminName}
-                      </td>
-
-                      <td className="py-3.5 px-4 text-right">
-                        {p.receiptId?._id ? (
-                          <a
-                            href={`/api/pdf/receipt/${p.receiptId._id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200/80 hover:bg-purple-100 transition-colors shadow-xs"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>Download PDF</span>
-                          </a>
-                        ) : (
-                          <span className="text-slate-400 italic text-[11px]">No receipt</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-400">
-                      {searchTerm ? "No payments match your search filter." : "No payment records found."}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+      {/* Tab 1: Course EMI Passbooks */}
+      {activeTab === "passbook" && (
+        <div className="space-y-4">
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by student name, mobile, course, or enrollment number..."
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-xs"
+            />
           </div>
+
+          {(() => {
+            const q = searchTerm.toLowerCase().trim();
+            const filteredEnrollments = enrollments.filter((e) => {
+              if (!q) return true;
+              return (
+                (e.studentId?.fullName || "").toLowerCase().includes(q) ||
+                (e.studentId?.mobileNumber || "").includes(q) ||
+                (e.courseNameSnapshot || "").toLowerCase().includes(q) ||
+                (e.enrollmentNumber || "").toLowerCase().includes(q)
+              );
+            });
+
+            if (filteredEnrollments.length === 0) {
+              return (
+                <div className="rounded-2xl bg-white border border-slate-200/80 p-12 text-center shadow-sm">
+                  <CreditCard className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                  <p className="text-xs text-slate-500">No student course records found matching your search.</p>
+                </div>
+              );
+            }
+
+            return filteredEnrollments.map((enr) => {
+              const enrInsts = installments
+                .filter((i) => (i.enrollmentId?._id || i.enrollmentId) === enr._id)
+                .sort((a, b) => (a.installmentNumber || 0) - (b.installmentNumber || 0));
+
+              return (
+                <div
+                  key={enr._id}
+                  className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-all space-y-4"
+                >
+                  {/* Card Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs px-2.5 py-0.5 rounded-lg bg-purple-50 text-purple-700 font-bold border border-purple-200/60">
+                          {enr.enrollmentNumber}
+                        </span>
+                        <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                          {enr.studentId?.fullName || "Student"}
+                        </h3>
+                        <span className="text-xs text-slate-500 font-mono">
+                          ({enr.studentId?.mobileNumber})
+                        </span>
+                      </div>
+                      <p className="text-xs font-semibold text-purple-700 mt-1">
+                        {enr.courseNameSnapshot}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                          enr.paymentStatus === "paid"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : enr.paymentStatus === "partially_paid"
+                            ? "bg-amber-50 text-amber-700 border-amber-200"
+                            : "bg-rose-50 text-rose-700 border-rose-200"
+                        }`}
+                      >
+                        {enr.paymentStatus ? enr.paymentStatus.replace("_", " ") : "unpaid"}
+                      </span>
+
+                      {canCollectFees && enr.outstandingBalance > 0 && (
+                        <button
+                          onClick={() => payEnrollmentBalance(enr)}
+                          className="px-3.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-bold text-xs shadow-xs transition-colors cursor-pointer"
+                        >
+                          Record Payment
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Financial Strip */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 p-3.5 rounded-xl bg-slate-50/80 border border-slate-100 text-xs">
+                    <div>
+                      <span className="text-[11px] text-slate-400 font-medium block">Agreed Course Fee</span>
+                      <span className="font-bold text-slate-800">
+                        ₹{(enr.agreedFeeSnapshot || enr.totalFee || 0).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-slate-400 font-medium block">Discount</span>
+                      <span className="font-bold text-emerald-600">
+                        - ₹{(enr.discountAmount || 0).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-slate-400 font-medium block">Final Net Fee</span>
+                      <span className="font-extrabold text-purple-700">
+                        ₹{(enr.totalFee || 0).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-slate-400 font-medium block">Paid So Far</span>
+                      <span className="font-bold text-emerald-700">
+                        ₹{(enr.paidAmount || 0).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-slate-400 font-medium block">Outstanding Balance</span>
+                      <span className="font-extrabold text-rose-600">
+                        ₹{(enr.outstandingBalance || 0).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* EMI Installment Table */}
+                  <div className="overflow-x-auto rounded-xl border border-slate-100">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-bold text-slate-500 uppercase">
+                          <th className="py-2.5 px-3">EMI #</th>
+                          <th className="py-2.5 px-3">Amount Due</th>
+                          <th className="py-2.5 px-3">Amount Paid</th>
+                          <th className="py-2.5 px-3">Due Date</th>
+                          <th className="py-2.5 px-3">Status</th>
+                          <th className="py-2.5 px-3">Paid Date</th>
+                          <th className="py-2.5 px-3 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                        {enrInsts.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="py-4 text-center text-slate-400 text-xs">
+                              Full one-time fee payment arrangement (no installment schedule)
+                            </td>
+                          </tr>
+                        ) : (
+                          enrInsts.map((inst) => (
+                            <tr key={inst._id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="py-2.5 px-3 font-bold text-slate-900">
+                                EMI {inst.installmentNumber}
+                              </td>
+                              <td className="py-2.5 px-3 font-semibold text-slate-900">
+                                ₹{inst.amount.toLocaleString("en-IN")}
+                              </td>
+                              <td className="py-2.5 px-3 font-bold text-emerald-700">
+                                ₹{(inst.paidAmount || 0).toLocaleString("en-IN")}
+                              </td>
+                              <td className="py-2.5 px-3 text-slate-600">
+                                {new Date(inst.dueDate).toLocaleDateString("en-IN", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <span
+                                  className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                                    inst.status === "paid"
+                                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                      : inst.status === "partially_paid"
+                                      ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                      : "bg-rose-50 text-rose-700 border border-rose-200"
+                                  }`}
+                                >
+                                  {inst.status}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 text-slate-500">
+                                {inst.paidDate
+                                  ? new Date(inst.paidDate).toLocaleDateString("en-IN", {
+                                      day: "numeric",
+                                      month: "short",
+                                      year: "numeric",
+                                    })
+                                  : "—"}
+                              </td>
+                              <td className="py-2.5 px-3 text-right">
+                                {inst.status === "paid" ? (
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600">
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    <span>Settled</span>
+                                  </span>
+                                ) : canCollectFees ? (
+                                  <button
+                                    onClick={() => paySpecificInstallment(inst)}
+                                    className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-[11px] font-bold shadow-xs transition-colors cursor-pointer"
+                                  >
+                                    Pay EMI {inst.installmentNumber} (₹{(inst.amount - (inst.paidAmount || 0)).toLocaleString("en-IN")})
+                                  </button>
+                                ) : (
+                                  <span className="text-[11px] text-slate-400 italic">Pending</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            });
+          })()}
         </div>
       )}
 
-      {/* Tab: Installments List */}
+      {/* Tab 2: Installments Table */}
       {activeTab === "installments" && (
-        <div className="rounded-2xl bg-white border border-slate-200/80 overflow-hidden shadow-xs">
+        <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-900">Student Installment Schedules</h3>
+            <span className="text-xs text-slate-500 font-medium">
+              Showing {filteredInstallments.length} schedule records
+            </span>
+          </div>
+
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-600">
-              <thead className="bg-slate-50/80 text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200/80 font-semibold">
-                <tr>
-                  <th className="py-3.5 px-4">Student & Enrollment</th>
-                  <th className="py-3.5 px-4">Installment #</th>
-                  <th className="py-3.5 px-4">Amount Due</th>
-                  <th className="py-3.5 px-4">Paid Amount</th>
-                  <th className="py-3.5 px-4">Due Date</th>
-                  <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4">Paid Date</th>
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="py-3 px-4">Student</th>
+                  <th className="py-3 px-4">Enrollment</th>
+                  <th className="py-3 px-4">EMI #</th>
+                  <th className="py-3 px-4">Amount</th>
+                  <th className="py-3 px-4">Due Date</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-normal">
-                {filteredInstallments.length > 0 ? (
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                {filteredInstallments.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-slate-400">
+                      No installment schedules found.
+                    </td>
+                  </tr>
+                ) : (
                   filteredInstallments.map((inst) => (
-                    <tr key={inst._id} className="hover:bg-purple-50/30 transition-colors">
-                      <td className="py-3.5 px-4">
-                        <p className="font-bold text-slate-900 text-xs">{inst.studentId?.fullName}</p>
-                        <p className="font-mono text-purple-600 text-[11px]">
-                          {inst.enrollmentId?.enrollmentNumber}
-                        </p>
+                    <tr key={inst._id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="py-3 px-4">
+                        <div className="font-bold text-slate-900">
+                          {inst.studentId?.fullName || "Student"}
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          {inst.studentId?.mobileNumber}
+                        </div>
                       </td>
-
-                      <td className="py-3.5 px-4 font-semibold text-slate-800">
-                        Installment {inst.installmentNumber}
+                      <td className="py-3 px-4 font-mono text-purple-700">
+                        {inst.enrollmentId?.enrollmentNumber || "—"}
                       </td>
-
-                      <td className="py-3.5 px-4 font-bold text-slate-900">
-                        ₹{inst.amount}
+                      <td className="py-3 px-4 font-bold text-slate-900">
+                        EMI {inst.installmentNumber}
                       </td>
-
-                      <td className="py-3.5 px-4 text-emerald-600 font-semibold">
-                        ₹{inst.paidAmount || 0}
+                      <td className="py-3 px-4 font-bold text-slate-900">
+                        ₹{inst.amount.toLocaleString("en-IN")}
                       </td>
-
-                      <td className="py-3.5 px-4 text-slate-600">
+                      <td className="py-3 px-4 text-slate-600">
                         {new Date(inst.dueDate).toLocaleDateString("en-IN", {
                           day: "numeric",
                           month: "short",
                           year: "numeric",
                         })}
                       </td>
-
-                      <td className="py-3.5 px-4">
+                      <td className="py-3 px-4">
                         <span
-                          className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                          className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                             inst.status === "paid"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                               : inst.status === "partially_paid"
-                              ? "bg-amber-50 text-amber-700 border-amber-200"
-                              : "bg-rose-50 text-rose-700 border-rose-200"
+                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                              : "bg-rose-50 text-rose-700 border border-rose-200"
                           }`}
                         >
                           {inst.status}
                         </span>
                       </td>
-
-                      <td className="py-3.5 px-4 text-slate-500">
-                        {inst.paidDate
-                          ? new Date(inst.paidDate).toLocaleDateString("en-IN", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            })
-                          : "—"}
+                      <td className="py-3 px-4 text-right">
+                        {inst.status !== "paid" && canCollectFees && (
+                          <button
+                            onClick={() => paySpecificInstallment(inst)}
+                            className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                          >
+                            Collect
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))
-                ) : (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-400">
-                      {searchTerm ? "No installments match your search." : "No installment schedules configured."}
-                    </td>
-                  </tr>
                 )}
               </tbody>
             </table>
@@ -486,115 +626,191 @@ function TrainerFeesContent() {
         </div>
       )}
 
-      {/* Record Payment Modal */}
+      {/* Tab 3: Payments List */}
+      {activeTab === "payments" && (
+        <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-900">Recorded Receipts & Transactions</h3>
+            <span className="text-xs text-slate-500 font-medium">
+              Showing {filteredPayments.length} transactions
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="py-3 px-4">Receipt #</th>
+                  <th className="py-3 px-4">Date</th>
+                  <th className="py-3 px-4">Student</th>
+                  <th className="py-3 px-4">Enrollment</th>
+                  <th className="py-3 px-4">Amount</th>
+                  <th className="py-3 px-4">Method</th>
+                  <th className="py-3 px-4 text-right">Official Receipt</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                {filteredPayments.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-slate-400">
+                      No payment transactions found.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredPayments.map((p) => (
+                    <tr key={p._id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="py-3 px-4 font-mono font-bold text-purple-700">
+                        {p.receiptNumber}
+                      </td>
+                      <td className="py-3 px-4 text-slate-600">
+                        {new Date(p.paymentDate).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="font-bold text-slate-900">
+                          {p.studentId?.fullName || "Student"}
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          {p.studentId?.mobileNumber}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 font-mono text-slate-600">
+                        {p.enrollmentId?.enrollmentNumber || "—"}
+                      </td>
+                      <td className="py-3 px-4 font-bold text-emerald-600">
+                        ₹{p.amount.toLocaleString("en-IN")}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="capitalize px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px]">
+                          {p.paymentMethod.replace("_", " ")}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        {p.receiptId?._id || p.receiptId ? (
+                          <a
+                            href={`/api/pdf/receipt/${p.receiptId?._id || p.receiptId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-50 text-purple-700 border border-purple-200/80 rounded-lg hover:bg-purple-100 text-xs font-bold transition-colors"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>PDF</span>
+                          </a>
+                        ) : (
+                          <span className="text-slate-400 text-xs italic">Processing</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* RECORD PAYMENT MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-          <div className="w-full max-w-lg bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-2xl p-6 sm:p-7 my-8 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-purple-50 border border-purple-200/60 flex items-center justify-center text-purple-600">
-                  <CreditCard className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-200/60">
+                  <Receipt className="w-4 h-4" />
                 </div>
-                <div>
-                  <h2 className="text-base font-bold text-slate-900">
-                    Collect Student Fee Payment
-                  </h2>
-                  <p className="text-xs text-slate-500">Record tuition fee, update dues, and issue official receipt</p>
-                </div>
+                <h3 className="text-base font-bold text-slate-900">
+                  Collect Student Fee Payment
+                </h3>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
+            {error && (
+              <div className="mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
             {newReceiptResult ? (
-              <div className="p-6 rounded-2xl bg-emerald-50/60 border border-emerald-200 text-center space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+              <div className="mt-4 space-y-4 text-center">
+                <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-200">
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-bold text-slate-900">Payment Successfully Recorded!</h3>
-                <p className="text-xs text-slate-600">{newReceiptResult.message}</p>
-                <div className="bg-white p-4 rounded-2xl border border-emerald-200/80 text-xs text-left space-y-2 max-w-sm mx-auto shadow-xs">
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Receipt Number:</span>
-                    <span className="text-purple-600 font-mono font-bold">
-                      {newReceiptResult.receipt?.receiptNumber}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Remaining Balance:</span>
-                    <span className="text-slate-900 font-bold">
-                      ₹{newReceiptResult.enrollment?.outstandingBalance}
-                    </span>
-                  </div>
-                </div>
+                <h4 className="text-sm font-bold text-slate-900">
+                  Payment Recorded Successfully!
+                </h4>
+                <p className="text-xs text-slate-600">
+                  Receipt Number:{" "}
+                  <strong className="text-purple-700 font-mono">
+                    {newReceiptResult.receipt?.receiptNumber}
+                  </strong>
+                </p>
 
-                <div className="flex justify-center gap-3 pt-2">
-                  {newReceiptResult.receipt?._id && (
-                    <a
-                      href={`/api/pdf/receipt/${newReceiptResult.receipt._id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-sm shadow-purple-500/20"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>Download Fee Receipt PDF</span>
-                    </a>
-                  )}
+                <div className="pt-3 flex gap-3">
+                  <a
+                    href={`/api/pdf/receipt/${newReceiptResult.receipt?._id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs rounded-xl shadow-sm transition-all"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download Receipt (PDF)</span>
+                  </a>
                   <button
                     onClick={() => {
                       setIsModalOpen(false);
                       setNewReceiptResult(null);
                     }}
-                    className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                    className="px-4 py-2.5 border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl hover:bg-slate-50 transition-colors"
                   >
-                    Done
+                    Close
                   </button>
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleRecordPayment} className="space-y-4 text-xs">
-                {error && (
-                  <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-medium flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
-                    <span>{error}</span>
-                  </div>
-                )}
-
+              <form onSubmit={handleRecordPayment} className="mt-5 space-y-4 text-xs">
                 <div>
                   <label className="block text-slate-700 font-semibold mb-1.5">
-                    Select Student Enrollment *
+                    Select Active Student Enrollment *
                   </label>
                   <select
                     value={formData.enrollmentId}
                     onChange={(e) => {
-                      const id = e.target.value;
-                      const enr = enrollments.find((x) => x._id === id);
+                      const enrId = e.target.value;
+                      const enr = enrollments.find((x) => x._id === enrId);
                       setFormData({
                         ...formData,
-                        enrollmentId: id,
-                        amount: String(enr && enr.outstandingBalance > 0 ? enr.outstandingBalance : ""),
+                        enrollmentId: enrId,
+                        amount: enr ? String(enr.outstandingBalance > 0 ? enr.outstandingBalance : "") : "",
                       });
                     }}
                     required
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 font-medium"
                   >
-                    {enrollments.map((e) => (
-                      <option key={e._id} value={e._id}>
-                        {e.enrollmentNumber} — {e.studentId?.fullName} ({e.courseNameSnapshot}) — Bal: ₹{e.outstandingBalance}
+                    <option value="">-- Choose Enrolled Student --</option>
+                    {enrollments.map((enr) => (
+                      <option key={enr._id} value={enr._id}>
+                        {enr.enrollmentNumber} — {enr.studentId?.fullName} ({enr.courseNameSnapshot}) — Balance: ₹
+                        {enr.outstandingBalance}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 {selectedEnrollment && (
-                  <div className="p-3.5 rounded-xl bg-purple-50/50 border border-purple-100 grid grid-cols-3 gap-2 text-[11px]">
+                  <div className="p-3 bg-purple-50/50 rounded-xl border border-purple-100 flex justify-between items-center text-xs">
                     <div>
-                      <span className="text-slate-500 block">Total Agreed Fee:</span>
-                      <span className="text-slate-900 font-bold">₹{selectedEnrollment.totalFee}</span>
+                      <span className="text-slate-500 block">Total Course Fee:</span>
+                      <span className="font-bold text-slate-800">₹{selectedEnrollment.totalFee}</span>
                     </div>
                     <div>
                       <span className="text-slate-500 block">Paid So Far:</span>
