@@ -88,11 +88,18 @@ export default function AdminEnrollmentsPage() {
   };
 
   const openCreateModal = () => {
-    const firstCourse = courses[0];
+    const firstStudent = students[0];
+    const activeCourseIds = new Set(
+      (firstStudent?.enrollments || [])
+        .filter((e: any) => e.enrollmentStatus === "active")
+        .map((e: any) => e.courseId?._id || e.courseId)
+    );
+    const nextCourse = courses.find((c) => !activeCourseIds.has(c._id)) || courses[0];
+
     setFormData({
-      studentId: students[0]?._id || "",
-      courseId: firstCourse?._id || "",
-      customFee: firstCourse?.defaultFee !== undefined ? String(firstCourse.defaultFee) : "",
+      studentId: firstStudent?._id || "",
+      courseId: nextCourse?._id || "",
+      customFee: nextCourse?.defaultFee !== undefined ? String(nextCourse.defaultFee) : "",
       discountAmount: "",
       paymentType: "full",
       installmentCount: "3",
@@ -101,6 +108,39 @@ export default function AdminEnrollmentsPage() {
     setError(null);
     setDuplicateWarning(null);
     setIsModalOpen(true);
+  };
+
+  const handleStudentSelect = (stId: string) => {
+    const selectedStudent = students.find((s) => s._id === stId);
+    const activeCourseIds = new Set(
+      (selectedStudent?.enrollments || [])
+        .filter((e: any) => e.enrollmentStatus === "active")
+        .map((e: any) => e.courseId?._id || e.courseId)
+    );
+    const nextCourse = courses.find((c) => !activeCourseIds.has(c._id)) || courses[0];
+
+    setFormData((prev) => ({
+      ...prev,
+      studentId: stId,
+      courseId: nextCourse?._id || prev.courseId,
+      customFee: nextCourse?.defaultFee !== undefined ? String(nextCourse.defaultFee) : prev.customFee,
+      discountAmount: "",
+      allowDuplicate: false,
+    }));
+    setDuplicateWarning(null);
+    setError(null);
+  };
+
+  const handleCourseSelect = (cId: string) => {
+    const selectedCourse = courses.find((c) => c._id === cId);
+    setFormData((prev) => ({
+      ...prev,
+      courseId: cId,
+      customFee: selectedCourse?.defaultFee !== undefined ? String(selectedCourse.defaultFee) : prev.customFee,
+      allowDuplicate: false,
+    }));
+    setDuplicateWarning(null);
+    setError(null);
   };
 
   const handleCreateEnrollment = async (e: React.FormEvent) => {
@@ -375,7 +415,7 @@ export default function AdminEnrollmentsPage() {
                 </label>
                 <select
                   value={formData.studentId}
-                  onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                  onChange={(e) => handleStudentSelect(e.target.value)}
                   required
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                 >
@@ -385,6 +425,32 @@ export default function AdminEnrollmentsPage() {
                     </option>
                   ))}
                 </select>
+
+                {/* Display Current Active Enrollments */}
+                {(() => {
+                  const selectedStudent = students.find((s) => s._id === formData.studentId);
+                  const activeEnrs = (selectedStudent?.enrollments || []).filter(
+                    (e: any) => e.enrollmentStatus === "active"
+                  );
+                  if (activeEnrs.length > 0) {
+                    return (
+                      <div className="mt-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 flex items-center justify-between flex-wrap gap-2">
+                        <span className="text-slate-500 font-medium">Currently Enrolled:</span>
+                        <div className="flex gap-1.5 flex-wrap">
+                          {activeEnrs.map((e: any) => (
+                            <span
+                              key={e._id}
+                              className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-semibold border border-blue-200/60"
+                            >
+                              {e.courseNameSnapshot || "Course"} ({e.enrollmentNumber})
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
 
               <div>
@@ -393,7 +459,7 @@ export default function AdminEnrollmentsPage() {
                 </label>
                 <select
                   value={formData.courseId}
-                  onChange={(e) => setFormData({ ...formData, courseId: e.target.value })}
+                  onChange={(e) => handleCourseSelect(e.target.value)}
                   required
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                 >
