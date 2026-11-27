@@ -806,7 +806,7 @@ export default function AdminStudentsPage() {
             </div>
 
             <p className="text-xs text-slate-600 leading-relaxed">
-              Agar <strong>{selectedStudent.fullName}</strong> ne beech me hi course chhod diya hai, toh unhe Inactive / Dropped mark karein. Unke past fee aur receipt records database me safe rahenge.
+              Mark <strong>{selectedStudent.fullName}</strong> as inactive or dropped if they have discontinued the course. All historical fee transactions, payment receipts, and enrollment records will be safely preserved in the database.
             </p>
 
             {modalError && (
