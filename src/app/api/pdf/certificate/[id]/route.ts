@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentSession } from "@/lib/auth/session";
+import { getCurrentSession, verifySessionToken } from "@/lib/auth/session";
 import { connectDB } from "@/lib/db/mongoose";
 import { Certificate } from "@/lib/models/Certificate";
 import { generateCertificatePdf } from "@/lib/pdf/certificate-pdf";
@@ -8,7 +8,14 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await getCurrentSession();
+  let session = await getCurrentSession();
+  if (!session) {
+    const queryToken = req.nextUrl.searchParams.get("token");
+    if (queryToken) {
+      session = await verifySessionToken(queryToken);
+    }
+  }
+
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
